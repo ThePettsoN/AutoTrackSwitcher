@@ -1,0 +1,11 @@
+## Interface: 20504
+## Title: AutoTrackSwitcher
+## Notes: 
+## Author: ThePettsoN
+## Version: 1.9.0
+## DefaultState: Enabled
+## LoadOnDemand: 0
+
+embeds.xml
+
+src/core.lua
