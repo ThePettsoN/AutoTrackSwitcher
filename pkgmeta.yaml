@@ -1,4 +1,4 @@
-package-as: LFGAnnouncements
+package-as: AutoTrackSwitcher
 enable-nolib-creation: no
 
 externals:
