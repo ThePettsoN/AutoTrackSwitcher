@@ -2,9 +2,11 @@
 ## Title: AutoTrackSwitcher
 ## Notes: 
 ## Author: ThePettsoN
-## Version: 1.9.0
+## Version: 1.0.0
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
+## X-Curse-Project-ID: 659020
+## X-Wago-ID: RaN0Al6j
 
 embeds.xml
 
