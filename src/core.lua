@@ -30,7 +30,7 @@ AutoTrackSwitcher.DEBUG = true
 
 AutoTrackSwitcher.dprint = function(msg, ...)
 	if AutoTrackSwitcher.DEBUG then
-		print(string.format("[AutoTrackSwitcher] %s", msg, ...))
+		print(string.format("[AutoTrackSwitcher] %s", string.format(msg, ...)))
 	end
 end
 
@@ -61,44 +61,33 @@ function Core:OnInitialize()
 	self._currentUpdateIndex = 0
 	self._timer = nil
 	self._trackingData = {}
+	self._enabledSpellIds = {}
 end
 
 function Core:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnPlayerEnteringWorld")
+	self:RegisterMessage("CONFIG_CHANGE", "OnConfigChange")
 
 	self:GetTrackingData()
 
 	local db = AutoTrackSwitcher.Db
-	local trackingData = db:GetProfileData("tracking")
+	self._updateInterval = db:GetProfileData("tracking", "interval")
 
-	self._updateInterval = trackingData.interval
-
-	local enabledSpellIds = trackingData.enabled_spell_ids
-	local updateDb = false
-	if #enabledSpellIds > 0 then
-		-- Verify spell ids
-		for i = #enabledSpellIds, 1, -1 do
-			local spellId = enabledSpellIds[i]
-			if not self._trackingData[spellId] then
-				tRemove(enabledSpellIds, i)
-				updateDb = true
-			end
-		end
-	else
-		-- Pick defaults
-		for id, data in pairs(self._trackingData) do
+	if db:GetCharacterData("first_time") then
+		AutoTrackSwitcher.dprint("First time")
+		local enabledSpellIds = {}
+		for spellId, data in pairs(self._trackingData) do
 			if not data.isNested then
-				enabledSpellIds[#enabledSpellIds + 1] = id
-				updateDb = true
+				AutoTrackSwitcher.dprint("Enabling tracking skill %q", data.name)
+				enabledSpellIds[spellId] = true
+				self._enabledSpellIds[#self._enabledSpellIds+1] = spellId
 			end
 		end
+		db:SetCharacterData("enabled_spell_ids", enabledSpellIds, "tracking")
+		db:SetCharacterData("first_time", false)
+	else
+		self:SetActiveTracking()
 	end
-
-	if updateDb then
-		db:SetProfileData("enabledSpellIds", enabledSpellIds, "tracking")
-	end
-
-	self._enabledSpellIds = enabledSpellIds
 
 	self:SetUpdateConditions()
 end
@@ -152,15 +141,40 @@ local function conditionUnmountedCombatFunc(...)
 	end
 end
 
+function Core:SetActiveTracking()
+	local db = AutoTrackSwitcher.Db
+
+	wipe(self._enabledSpellIds)
+
+	local updateDb = false
+	local enabledSpellIds = db:GetCharacterData("tracking", "enabled_spell_ids")
+	for spellId, enabled in pairs(enabledSpellIds) do
+		if enabled and self._trackingData[spellId] then
+			AutoTrackSwitcher.dprint("Enabling tracking skill %q", self._trackingData[spellId].name)
+			self._enabledSpellIds[#self._enabledSpellIds+1] = spellId
+		else
+			AutoTrackSwitcher.dprint("Removing invalid tracking skill %q", self._trackingData[spellId].name)
+			enabledSpellIds[spellId] = nil
+			updateDb = true
+		end
+	end
+
+	if updateDb then
+		db:SetCharacterData("enabled_spell_ids", enabledSpellIds, "tracking")
+	end
+end
+
 function Core:SetUpdateConditions()
+	AutoTrackSwitcher.dprint("Update conditions")
 	local db = AutoTrackSwitcher.Db
 	local conditions = db:GetProfileData("conditions")
+	local const = AutoTrackSwitcher.Const
 
-	if conditions.disable_in_combat == AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT.NEVER then
+	if conditions.disable_in_combat == const.ENUM_DISABLE_IN_COMBAT.NO then
 		self._disableInCombatFunc = falseFunc
-	elseif conditions.disable_in_combat == AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT.ALWAYS then
+	elseif conditions.disable_in_combat == const.ENUM_DISABLE_IN_COMBAT.YES then
 		self._disableInCombatFunc = UnitAffectingCombat
-	elseif conditions.disable_in_combat == AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT.UNMOUNTED then
+	elseif conditions.disable_in_combat == const.ENUM_DISABLE_IN_COMBAT.UNMOUNTED then
 		self._disableInCombatFunc = conditionUnmountedCombatFunc
 	end
 
@@ -209,7 +223,12 @@ end
 
 function Core:Start()
 	if self._isRunning then
-		AutoTrackSwitcher.dprint("AutoTrackSwitcher is already running")
+		AutoTrackSwitcher.dprint("Already running")
+		return
+	end
+
+	if #self._enabledSpellIds == 0 then
+		AutoTrackSwitcher.dprint("No tracking spells enabled")
 		return
 	end
 
@@ -223,7 +242,7 @@ end
 
 function Core:Stop()
 	if not self._isRunning then
-		AutoTrackSwitcher.dprint("AutoTrackSwitcher is not running")
+		AutoTrackSwitcher.dprint("Not running")
 		return
 	end
 
@@ -239,6 +258,9 @@ function Core:SetInterval(interval)
 	if interval < 2 then
 		AutoTrackSwitcher.dprint("Interval can not be lower than 2 seconds")
 		interval = 2
+	elseif interval > 60 then
+		AutoTrackSwitcher.dprint("Interval can not be higher than 60 seconds")
+		interval = 60
 	end
 
 	self._updateInterval = interval
@@ -254,5 +276,14 @@ end
 
 function Core:OnPlayerEnteringWorld(event, isInitialLogin, isReloadingUi)
 	local _, instanceType = GetInstanceInfo()
-	self._instanceType = instanceType == "none" and "world" or instanceType
+	self._currentArea = instanceType == "none" and "world" or instanceType
+end
+
+function Core:OnConfigChange(...)
+	self:SetActiveTracking()
+	self:SetUpdateConditions()
+
+	if self._isRunning and #self._enabledSpellIds == 0 then
+		self:Stop()
+	end
 end

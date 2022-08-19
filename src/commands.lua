@@ -146,4 +146,6 @@ function Commands:_set_interval(interval)
 end
 
 function Commands:_settings(nextPosition, args)
+    local module = AutoTrackSwitcher.Options
+    module.Toggle()
 end

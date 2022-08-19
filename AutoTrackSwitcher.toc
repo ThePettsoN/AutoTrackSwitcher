@@ -14,3 +14,6 @@ embeds.xml
 src/core.lua
 src/db.lua
 src/commands.lua
+
+src/options/main.lua
+src/options/templates/general.lua

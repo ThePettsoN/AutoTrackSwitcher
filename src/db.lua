@@ -4,18 +4,16 @@ local Db = {}
 AutoTrackSwitcher.Core:RegisterModule("Db", Db)
 
 local ENUM_DISABLE_IN_COMBAT = {
-	NEVER = 1,
-	ALWAYS = 2,
+	YES = 1,
+	NO = 2,
 	UNMOUNTED = 3,
 }
 AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT = ENUM_DISABLE_IN_COMBAT
-
 
 local DEFAULTS = {
     profile = {
         tracking = {
             interval = 2,
-            enabled_spell_ids = {},
         },
         minimap = {
             hide = false,
@@ -35,7 +33,12 @@ local DEFAULTS = {
 			disable_while_dead = true,
 		}
     },
-    char = {},
+    char = {
+		tracking = {
+			enabled_spell_ids = {},
+		},
+		first_time = true,
+	},
 }
 
 function Db:OnInitialize()
