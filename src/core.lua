@@ -66,7 +66,7 @@ end
 
 function Core:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnPlayerEnteringWorld")
-	self:RegisterMessage("CONFIG_CHANGE", "OnConfigChange")
+	self:RegisterMessage("ConfigChange", "OnConfigChange")
 
 	self:GetTrackingData()
 

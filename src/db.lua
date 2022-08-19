@@ -1,7 +1,7 @@
 local _, AutoTrackSwitcher = ...
 
 local Db = {}
-AutoTrackSwitcher.Core:RegisterModule("Db", Db)
+AutoTrackSwitcher.Core:RegisterModule("Db", Db, "AceEvent-3.0")
 
 local ENUM_DISABLE_IN_COMBAT = {
 	YES = 1,
@@ -43,6 +43,12 @@ local DEFAULTS = {
 
 function Db:OnInitialize()
     self._db = LibStub("AceDB-3.0"):New("AutoTrackSwitcherDB", DEFAULTS)
+	self._db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")
+	self._db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")
+end
+
+function Db:OnProfileChanged()
+	self:SendMessage("ConfigChange")
 end
 
 function Db:SetCharacterData(key, value, ...)

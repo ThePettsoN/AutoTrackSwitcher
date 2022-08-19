@@ -51,6 +51,6 @@ end
 function Options:SetSetting(funcName, ...)
 	local db = AutoTrackSwitcher.Db
 	db[funcName](db, ...)
-	self:SendMessage("CONFIG_CHANGE")
+	self:SendMessage("ConfigChange")
 end
 
