@@ -30,6 +30,18 @@ externals:
         url: https://repos.curseforge.com/wow/ace3/trunk/AceEvent-3.0
         tag: latest
 
+    libs/AceGUI-3.0:
+        url: https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0
+        tag: latest
+
+    libs/AceConfig-3.0:
+        url: https://repos.curseforge.com/wow/ace3/trunk/AceConfig-3.0
+        tag: latest
+
+    libs/AceDBOptions-3.0:
+        url: https://repos.curseforge.com/wow/ace3/trunk/AceDBOptions-3.0
+        tag: latest
+
 ignore:
     - .git
     - .gitignore
