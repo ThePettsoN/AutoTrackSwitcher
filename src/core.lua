@@ -26,7 +26,7 @@ AutoTrackSwitcher.Const = {
 	}
 }
 
-AutoTrackSwitcher.DEBUG = true
+AutoTrackSwitcher.DEBUG = false
 
 AutoTrackSwitcher.dprint = function(msg, ...)
 	if AutoTrackSwitcher.DEBUG then
