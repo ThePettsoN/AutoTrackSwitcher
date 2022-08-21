@@ -222,6 +222,7 @@ function Core:OnUpdate()
 end
 
 function Core:Start()
+	AutoTrackSwitcher.dprint("Starting")
 	if self._isRunning then
 		AutoTrackSwitcher.dprint("Already running")
 		return
@@ -241,6 +242,7 @@ function Core:Start()
 end
 
 function Core:Stop()
+	AutoTrackSwitcher.dprint("Stopping")
 	if not self._isRunning then
 		AutoTrackSwitcher.dprint("Not running")
 		return
@@ -283,7 +285,14 @@ function Core:OnConfigChange(...)
 	self:SetActiveTracking()
 	self:SetUpdateConditions()
 
-	if self._isRunning and #self._enabledSpellIds == 0 then
+	if self._isRunning then
+		local db = AutoTrackSwitcher.Db
+		self._updateInterval = db:GetProfileData("tracking", "interval")
+
 		self:Stop()
+
+		if #self._enabledSpellIds > 0 then
+			self:Start()
+		end
 	end
 end
