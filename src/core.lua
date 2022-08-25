@@ -46,7 +46,7 @@ local UnitAffectingCombat = UnitAffectingCombat
 local IsMounted = IsMounted
 local SetTracking = SetTracking
 local IsFalling = IsFalling
-local IsDead = IsDead
+local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 local IsResting = IsResting
 local GetInstanceInfo = GetInstanceInfo
 local IsSpellKnown = IsSpellKnown
@@ -180,7 +180,7 @@ function Core:SetUpdateConditions()
 
 	self._disableForAreas = conditions.disable_in_areas
 	self._disableWhileFallingFunc = conditions.disable_while_falling and IsFalling or falseFunc
-	self._disableWhileDeadFunc = conditions.disable_while_dead and IsDead or falseFunc
+	self._disableWhileDeadFunc = conditions.disable_while_dead and UnitIsDeadOrGhost or falseFunc
 end
 
 function Core:RegisterModule(name, module, ...)
@@ -204,12 +204,12 @@ function Core:OnUpdate()
 		return
 	end
 
-	if self._disableWhileFallingFunc() then
+	if self._disableWhileFallingFunc("player") then
 		AutoTrackSwitcher.dprint(stringformat("Disable due to: Falling"))
 		return
 	end
 
-	if self._disableWhileDeadFunc() then
+	if self._disableWhileDeadFunc("player") then
 		AutoTrackSwitcher.dprint(stringformat("Disable due to: Dead"))
 		return
 	end
