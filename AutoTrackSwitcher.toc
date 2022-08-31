@@ -1,8 +1,8 @@
-## Interface: 20504
+## Interface: 30400
 ## Title: AutoTrackSwitcher
 ## Notes: 
 ## Author: ThePettsoN
-## Version: 2.0.2
+## Version: 2.0.3
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## SavedVariables: AutoTrackSwitcherDB
