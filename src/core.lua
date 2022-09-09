@@ -246,7 +246,7 @@ function Core:OnUpdate()
 	SetTracking(index, true)
 end
 
-function Core:Start()
+function Core:Start(initial)
 	dprint(DEBUG_SEVERITY.INFO, "Starting")
 	if self._isRunning then
 		dprint(DEBUG_SEVERITY.INFO, "Already running")
@@ -264,10 +264,13 @@ function Core:Start()
 
 	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self._updateInterval)
 	self._isRunning = true
-	print("Started!")
+
+	if initial then
+		print("Started!")
+	end
 end
 
-function Core:Stop()
+function Core:Stop(initial)
 	dprint(DEBUG_SEVERITY.INFO, "Stopping")
 	if not self._isRunning then
 		dprint(DEBUG_SEVERITY.INFO, "Not running")
@@ -280,7 +283,10 @@ function Core:Stop()
 	end
 
 	self._isRunning = false
-	print("Stopped!")
+
+	if initial then
+		print("Stopped!")
+	end
 end
 
 function Core:IsRunning()
@@ -335,10 +341,10 @@ function Core:OnConfigChange(...)
 		local db = AutoTrackSwitcher.Db
 		self._updateInterval = db:GetProfileData("tracking", "interval")
 
-		self:Stop()
+		self:Stop(false)
 
 		if #self._enabledSpellIds > 0 then
-			self:Start()
+			self:Start(false)
 		end
 	end
 end

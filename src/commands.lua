@@ -229,11 +229,11 @@ function Commands:_help(nextPosition, args)
 end
 
 function Commands:_start(nextPosition, args)
-    AutoTrackSwitcher.Core:Start()
+    AutoTrackSwitcher.Core:Start(true)
 end
 
 function Commands:_stop(nextPosition, args)
-    AutoTrackSwitcher.Core:Stop()
+    AutoTrackSwitcher.Core:Stop(true)
 end
 
 function Commands:_set_interval(interval)
@@ -247,8 +247,8 @@ end
 
 function Commands:_toggle()
     if AutoTrackSwitcher.Core:IsRunning() then
-        AutoTrackSwitcher.Core:Stop()
+        AutoTrackSwitcher.Core:Stop(true)
     else
-        AutoTrackSwitcher.Core:Start()
+        AutoTrackSwitcher.Core:Start(true)
     end
 end
