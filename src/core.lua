@@ -276,6 +276,10 @@ function Core:Stop()
 	self._isRunning = false
 end
 
+function Core:IsRunning()
+	return self._isRunning
+end
+
 function Core:SetInterval(interval)
 	if interval < 2 then
 		dprint(DEBUG_SEVERITY.INFO, "Interval can not be lower than 2 seconds")

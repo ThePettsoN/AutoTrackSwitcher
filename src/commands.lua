@@ -13,6 +13,7 @@ local CHAT_COMMAND_ALIAS = {
     help = "HELP",
     start = "START",
     stop = "STOP",
+    toggle = "TOGGLE",
     
     -- Timer related
     interval = "INTERVAL",
@@ -44,6 +45,11 @@ local CHAT_COMMANDS = {
         syntax = "stop",
         desc = "Stop the addon",
         func = "_stop",
+    },
+    TOGGLE = {
+        syntax = "toggle",
+        desc = "Toggle between starting and stopping the addon",
+        func = "_toggle",
     },
     INTERVAL = {
         syntax = "interval",
@@ -151,4 +157,12 @@ end
 function Commands:_settings(nextPosition, args)
     local module = AutoTrackSwitcher.Options
     module.Toggle()
+end
+
+function Commands:_toggle()
+    if AutoTrackSwitcher.Core:IsRunning() then
+        AutoTrackSwitcher.Core:Stop()
+    else
+        AutoTrackSwitcher.Core:Start()
+    end
 end

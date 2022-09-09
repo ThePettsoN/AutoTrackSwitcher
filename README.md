@@ -12,6 +12,7 @@ GroupFinderImprovements is a addon that will switch between different tracking s
 AutoTrackSwitcher's configuration UI is available through Interface -> Addons -> AutoTrackSwitcher. There are also some commands available:
 - /ats start - Starts the addon
 - /ats stop - Stops the addon
+- /ats toggle - Toggle between starting and stopping the addon
 - /ats help - Display a help with all available commands
 - /ats interval - Change how often the addon should switch between each tracking skill
 - /ats config - Open the configuration UI
