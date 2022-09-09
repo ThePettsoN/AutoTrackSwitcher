@@ -249,7 +249,7 @@ end
 function Core:Start(initial)
 	dprint(DEBUG_SEVERITY.INFO, "Starting")
 	if self._isRunning then
-		dprint(DEBUG_SEVERITY.INFO, "Already running")
+		print("Addon already running!")
 		return
 	end
 
@@ -266,14 +266,14 @@ function Core:Start(initial)
 	self._isRunning = true
 
 	if initial then
-		print("Started!")
+		print("Addon started!")
 	end
 end
 
 function Core:Stop(initial)
 	dprint(DEBUG_SEVERITY.INFO, "Stopping")
 	if not self._isRunning then
-		dprint(DEBUG_SEVERITY.INFO, "Not running")
+		print("Addon not running!")
 		return
 	end
 
@@ -285,7 +285,7 @@ function Core:Stop(initial)
 	self._isRunning = false
 
 	if initial then
-		print("Stopped!")
+		print("Addon stopped!")
 	end
 end
 
