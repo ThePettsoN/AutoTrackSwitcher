@@ -90,7 +90,9 @@ function Core:OnEnable()
 	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnLearnedSpellInTab")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
+end
 
+function Core:Initialize()
 	self:GetTrackingData()
 
 	local db = AutoTrackSwitcher.Db
@@ -306,6 +308,9 @@ function Core:SetInterval(interval)
 end
 
 function Core:OnPlayerEnteringWorld(event, isInitialLogin, isReloadingUi)
+	dprint(DEBUG_SEVERITY.INFO, "OnPlayerEnteringWorld: %q, %q", tostring(isInitialLogin), tostring(isReloadingUi))
+	self:Initialize()
+
 	local _, instanceType = GetInstanceInfo()
 	self._currentArea = instanceType == "none" and "world" or instanceType
 end
