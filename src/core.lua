@@ -86,6 +86,9 @@ end
 
 function Core:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnPlayerEnteringWorld")
+	self:RegisterEvent("SKILL_LINES_CHANGED", "OnSkillLinesChanged")
+	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnLearnedSpellInTab")
+
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 
 	self:GetTrackingData()
@@ -305,6 +308,18 @@ end
 function Core:OnPlayerEnteringWorld(event, isInitialLogin, isReloadingUi)
 	local _, instanceType = GetInstanceInfo()
 	self._currentArea = instanceType == "none" and "world" or instanceType
+end
+
+function Core:OnSkillLinesChanged()
+	dprint(DEBUG_SEVERITY.INFO, "Skill list changed. Fetching data anew")
+	self:GetTrackingData()
+	self:OnConfigChange()
+end
+
+function Core:OnLearnedSpellInTab()
+	dprint(DEBUG_SEVERITY.INFO, "New spell learned. Fetching data anew")
+	self:GetTrackingData()
+	self:OnConfigChange()
 end
 
 function Core:OnConfigChange(...)
