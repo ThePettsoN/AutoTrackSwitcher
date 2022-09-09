@@ -26,15 +26,35 @@ AutoTrackSwitcher.Const = {
 	}
 }
 
+local DEBUG_SEVERITY = {
+	INFO = "INFO",
+	DEBUG = "DEBUG",
+	ERROR = "ERROR",
+	WARNING = "WARNING",
+}
+local SEVERITY_COLOR_LOOKUP = {
+	[DEBUG_SEVERITY.INFO] = "00ffffff",
+	[DEBUG_SEVERITY.DEBUG] = "00ffffff",
+	[DEBUG_SEVERITY.ERROR] = "00ff0000",
+	[DEBUG_SEVERITY.WARNING] = "00eed202",
+}
+
+AutoTrackSwitcher.DEBUG_SEVERITY = DEBUG_SEVERITY
 AutoTrackSwitcher.DEBUG = false
 
-AutoTrackSwitcher.dprint = function(msg, ...)
+AutoTrackSwitcher.dprint = function(severity, msg, ...)
 	if AutoTrackSwitcher.DEBUG then
-		print(string.format("[AutoTrackSwitcher] %s", string.format(msg, ...)))
+		print(string.format("[AutoTrackSwitcher]|c%s[%s] %s|r", SEVERITY_COLOR_LOOKUP[severity], severity, string.format(msg, ...)))
 	end
 end
 
+AutoTrackSwitcher.print = function(msg, ...)
+	print(string.format("[AutoTrackSwitcher] %s", string.format(msg, ...)))
+end
+
 -- Lua API
+local dprint = AutoTrackSwitcher.dprint
+local print = AutoTrackSwitcher.print
 local tRemove = table.remove
 local stringformat = string.format
 local wipe = wipe
@@ -74,11 +94,11 @@ function Core:OnEnable()
 	self._updateInterval = db:GetProfileData("tracking", "interval")
 
 	if db:GetCharacterData("first_time") then
-		AutoTrackSwitcher.dprint("First time")
+		dprint(DEBUG_SEVERITY.INFO, "First time")
 		local enabledSpellIds = {}
 		for spellId, data in pairs(self._trackingData) do
 			if not data.isNested then
-				AutoTrackSwitcher.dprint("Enabling tracking skill %q", data.name)
+				dprint(DEBUG_SEVERITY.INFO, "Enabling tracking skill %q", data.name)
 				enabledSpellIds[spellId] = true
 				self._enabledSpellIds[#self._enabledSpellIds+1] = spellId
 			end
@@ -150,10 +170,10 @@ function Core:SetActiveTracking()
 	local enabledSpellIds = db:GetCharacterData("tracking", "enabled_spell_ids")
 	for spellId, enabled in pairs(enabledSpellIds) do
 		if enabled and self._trackingData[spellId] then
-			AutoTrackSwitcher.dprint("Enabling tracking skill %q", self._trackingData[spellId].name)
-			self._enabledSpellIds[#self._enabledSpellIds+1] = spellId
+			dprint(DEBUG_SEVERITY.INFO, "Enabling tracking skill %q", self._trackingData[spellId].name)
+			self._enabledSpellIds[#self._enabledSpellIds + 1] = spellId
 		else
-			AutoTrackSwitcher.dprint("Removing invalid tracking skill %q", self._trackingData[spellId].name)
+			dprint(DEBUG_SEVERITY.INFO, "Removing invalid tracking skill %q", spellId)
 			enabledSpellIds[spellId] = nil
 			updateDb = true
 		end
@@ -165,7 +185,7 @@ function Core:SetActiveTracking()
 end
 
 function Core:SetUpdateConditions()
-	AutoTrackSwitcher.dprint("Update conditions")
+	dprint(DEBUG_SEVERITY.INFO, "Update conditions")
 	local db = AutoTrackSwitcher.Db
 	local conditions = db:GetProfileData("conditions")
 	local const = AutoTrackSwitcher.Const
@@ -190,27 +210,27 @@ end
 
 function Core:OnUpdate()
 	if self._disableForAreas[self._currentArea] then
-		AutoTrackSwitcher.dprint(stringformat("Disable due to: In Disabled Area %q", self._currentArea))
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: In Disabled Area %q", self._currentArea))
 		return
 	end
 
 	if self._disableForAreas.city and IsResting("player") then
-		AutoTrackSwitcher.dprint(stringformat("Disable due to: In Disabled Area \"city\""))
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: In Disabled Area \"city\""))
 		return
 	end
 
 	if self._disableInCombatFunc("player") then
-		AutoTrackSwitcher.dprint(stringformat("Disable due to: In Combat"))
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: In Combat"))
 		return
 	end
 
 	if self._disableWhileFallingFunc("player") then
-		AutoTrackSwitcher.dprint(stringformat("Disable due to: Falling"))
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Falling"))
 		return
 	end
 
 	if self._disableWhileDeadFunc("player") then
-		AutoTrackSwitcher.dprint(stringformat("Disable due to: Dead"))
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Dead"))
 		return
 	end
 
@@ -222,14 +242,14 @@ function Core:OnUpdate()
 end
 
 function Core:Start()
-	AutoTrackSwitcher.dprint("Starting")
+	dprint(DEBUG_SEVERITY.INFO, "Starting")
 	if self._isRunning then
-		AutoTrackSwitcher.dprint("Already running")
+		dprint(DEBUG_SEVERITY.INFO, "Already running")
 		return
 	end
 
 	if #self._enabledSpellIds == 0 then
-		AutoTrackSwitcher.dprint("No tracking spells enabled")
+		dprint(DEBUG_SEVERITY.INFO, "No tracking spells enabled")
 		return
 	end
 
@@ -242,9 +262,9 @@ function Core:Start()
 end
 
 function Core:Stop()
-	AutoTrackSwitcher.dprint("Stopping")
+	dprint(DEBUG_SEVERITY.INFO, "Stopping")
 	if not self._isRunning then
-		AutoTrackSwitcher.dprint("Not running")
+		dprint(DEBUG_SEVERITY.INFO, "Not running")
 		return
 	end
 
@@ -258,17 +278,17 @@ end
 
 function Core:SetInterval(interval)
 	if interval < 2 then
-		AutoTrackSwitcher.dprint("Interval can not be lower than 2 seconds")
+		dprint(DEBUG_SEVERITY.INFO, "Interval can not be lower than 2 seconds")
 		interval = 2
 	elseif interval > 60 then
-		AutoTrackSwitcher.dprint("Interval can not be higher than 60 seconds")
+		dprint(DEBUG_SEVERITY.INFO, "Interval can not be higher than 60 seconds")
 		interval = 60
 	end
 
 	self._updateInterval = interval
 
 	if self._isRunning then
-		AutoTrackSwitcher.dprint("Restarting timer")
+		dprint(DEBUG_SEVERITY.INFO, "Restarting timer")
 		if self._timer then
 			self:CancelTimer(self._timer)
 		end

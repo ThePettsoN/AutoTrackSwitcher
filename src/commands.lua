@@ -1,5 +1,8 @@
 local _, AutoTrackSwitcher = ...
 
+local DEBUG_SEVERITY = AutoTrackSwitcher.DEBUG_SEVERITY
+local dprint = AutoTrackSwitcher.dprint
+local print = AutoTrackSwitcher.print
 local stringformat = string.format
 local wipe = wipe
 
@@ -81,7 +84,7 @@ function Commands:OnChatCommand(args)
     if valid then
         self[commandData.func](self, unpack(arguments))
     else
-        print(stringformat("Invalid command: \"/ats %s\"", args))
+        print("Invalid command: \"/ats %s\"", args)
     end
 end
 
@@ -129,7 +132,7 @@ function Commands:_help(nextPosition, args)
                 end
             end
         end
-        print(stringformat("\"%s%s\" - %s", help.syntax, argString, help.desc))
+        print("\"%s%s\" - %s", help.syntax, argString, help.desc)
     end
 end
 
