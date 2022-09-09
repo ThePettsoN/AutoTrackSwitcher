@@ -1,7 +1,7 @@
 ## AutoTrackSwitcher
  
 ### Overview
-GroupFinderImprovements is a addon that will switch between different tracking skills automatically. It's the perfect addon for farming characters with multiple gathering professions.
+AutoTrackSwitcher is a addon that will switch between different tracking skills automatically. It's the perfect addon for farming characters with multiple gathering professions.
  
 ### Features
 - Automatically switch between different tracking skills
