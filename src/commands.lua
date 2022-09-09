@@ -74,7 +74,93 @@ function Commands:OnInitialize()
 end
 
 function Commands:OnEnable()
+    if AutoTrackSwitcher.DEBUG then
+        if self:_validateCommands() then
+            dprint(DEBUG_SEVERITY.INFO, "Commands validated successful!")
+        end
+    end
+
     self:RegisterChatCommand("ats", "OnChatCommand")
+end
+
+function Commands:_validateCommands()
+    for command, data in pairs(CHAT_COMMANDS) do
+        if not data.syntax then -- Check syntax exists
+            dprint(DEBUG_SEVERITY.ERROR, "Missing \"syntax\" for chat command %q", command)
+            return false
+        end
+
+        if not data.desc then -- Check desciption exists
+            dprint(DEBUG_SEVERITY.ERROR, "Missing \"desc\" for chat command %q", command)
+            return false
+        end
+
+        if not data.func then -- Check function exists
+            dprint(DEBUG_SEVERITY.ERROR, "Missing \"func\" for chat command %q", command)
+            return false
+        elseif not self[data.func] then -- Check function actual exists on Command object
+            dprint(DEBUG_SEVERITY.ERROR, "Invalid function %q for chat command %q", data.func, command)
+                return false
+        end
+
+        -- Check arguments
+        local arguments = data.arguments
+        if arguments then
+            if #arguments == 0 then -- Arguments should never be empty. Either populate or remove
+                dprint(DEBUG_SEVERITY.ERROR, "Empty arguments for chat command %q", command)
+                return false
+            else
+                -- Verify argument structure
+                for i = 1, #arguments do
+                    local argument = arguments[i]
+                    if not argument.name then
+                        dprint(DEBUG_SEVERITY.ERROR, "Missing \"name\" for argument %d for chat command %q", i, command)
+                        return false
+                    end
+
+                    if argument.type == nil then
+                        dprint(DEBUG_SEVERITY.ERROR, "Missing \"type\" for argument %d for chat command %q", i, command)
+                        return false
+                    end
+
+                    if argument.required == nil then
+                        dprint(DEBUG_SEVERITY.ERROR, "Missing \"required\" for argument %d for chat command %q", i, command)
+                        return false
+                    end
+                end
+
+                -- Verify optional arguments are not in front of required
+                local optionalFound = false
+                for i = 1, #arguments do
+                    local argument = arguments[i]
+                    if not argument.required then
+                        optionalFound = true
+                    elseif optionalFound then
+                        dprint(DEBUG_SEVERITY.ERROR, "Optional arguments found before required arguments for chat command %q", command)
+                        return false
+                    end
+                end
+
+                -- Verify arguments have valid types
+                for i = 1, #arguments do
+                    local argument = arguments[i]
+                    if not CONVERT_FUNCTIONS[argument.type] then
+                        dprint(DEBUG_SEVERITY.ERROR, "Invalid argument type %q for argument %d for chat command %q", argument.type, i, command)
+                        return false
+                    end
+                end
+            end
+        end
+    end
+
+    for chatAlias, command in pairs(CHAT_COMMAND_ALIAS) do
+        if not CHAT_COMMANDS[command] then
+            dprint(DEBUG_SEVERITY.ERROR, "Invalid command %q for chat alias %q", command, chatAlias)
+            return false
+        end
+    end
+
+    return true
 end
 
 function Commands:OnChatCommand(args)
