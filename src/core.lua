@@ -259,6 +259,7 @@ function Core:Start()
 
 	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self._updateInterval)
 	self._isRunning = true
+	print("Started!")
 end
 
 function Core:Stop()
@@ -274,6 +275,7 @@ function Core:Stop()
 	end
 
 	self._isRunning = false
+	print("Stopped!")
 end
 
 function Core:IsRunning()
