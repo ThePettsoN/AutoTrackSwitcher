@@ -2,7 +2,7 @@
 ## Title: AutoTrackSwitcher
 ## Notes: 
 ## Author: ThePettsoN
-## Version: 2.0.3
+## Version: 2.1.0
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## SavedVariables: AutoTrackSwitcherDB
