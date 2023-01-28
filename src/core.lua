@@ -60,11 +60,11 @@ local stringformat = string.format
 local wipe = wipe
 
 -- WoW API
-local GetNumTrackingTypes = GetNumTrackingTypes
-local GetTrackingInfo = GetTrackingInfo
+local GetNumTrackingTypes = C_Minimap.GetNumTrackingTypes
+local GetTrackingInfo = C_Minimap.GetTrackingInfo
 local UnitAffectingCombat = UnitAffectingCombat
 local IsMounted = IsMounted
-local SetTracking = SetTracking
+local SetTracking = C_Minimap.SetTracking
 local IsFalling = IsFalling
 local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 local IsResting = IsResting
