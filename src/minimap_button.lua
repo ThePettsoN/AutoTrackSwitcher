@@ -28,7 +28,6 @@ function MinimapButton:OnEnable()
     })
     LibIcon:Register(TOCNAME, gfiLDB, minimapSettings)
     self._button = _G["LibDBIcon10_" .. TOCNAME]
-    test = AutoTrackSwitcher
 end
 
 function MinimapButton:Show()
