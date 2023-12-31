@@ -210,6 +210,20 @@ local function conditionUnmountedCombatFunc(...)
 	end
 end
 
+local function isTracking(trackingData)
+	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+		local trackingTextureId = GetTrackingTexture()
+		if not trackingTextureId then
+			return false
+		end
+
+		return trackingTextureId == trackingData.texture
+	end
+
+	local _, _, active = GetTrackingInfo(trackingData.index)
+	return active
+end
+
 function Core:SetActiveTracking()
 	local db = AutoTrackSwitcher.Db
 
@@ -286,6 +300,11 @@ function Core:OnUpdate()
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._enabledSpellIds) + 1
 	local spellId = self._enabledSpellIds[self._currentUpdateIndex]
 	local trackingData = self._trackingData[spellId]
+
+	if isTracking(trackingData) then
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Already tracking"))
+		return
+	end
 
 	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
 		CastSpellByName(trackingData.name)
