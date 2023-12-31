@@ -139,6 +139,30 @@ function Core:GetTrackingData()
 	wipe(self._trackingData)
 
 	DetermineGameVersion()
+	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+		-- Hardcoded for now. Should probably refactor at some point
+
+		if IsSpellKnown(2580) then -- Mining
+			local name = GetSpellInfo(2580)
+			self._trackingData[2580] = {
+				name = name,
+				index = 2580,
+				isNested = false,
+				texture = 136025
+			}
+		end
+		if IsSpellKnown(2383) then -- Herb
+			local name = GetSpellInfo(2383)
+			self._trackingData[2383] = {
+				name = name,
+				index = 2383,
+				isNested = false,
+				texture = 133939,
+			}
+		end
+
+		return
+	end
 
 	local numTrackingTypes = GetNumTrackingTypes()
 	for i = 1, numTrackingTypes do
@@ -261,9 +285,13 @@ function Core:OnUpdate()
 
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._enabledSpellIds) + 1
 	local spellId = self._enabledSpellIds[self._currentUpdateIndex]
+	local trackingData = self._trackingData[spellId]
 
-	local index = self._trackingData[spellId].index
-	SetTracking(index, true)
+	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+		CastSpellByName(trackingData.name)
+	else
+		SetTracking(trackingData.index, true)
+	end
 end
 
 function Core:Start(initial)
