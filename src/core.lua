@@ -38,6 +38,12 @@ local SEVERITY_COLOR_LOOKUP = {
 	[DEBUG_SEVERITY.ERROR] = "00ff0000",
 	[DEBUG_SEVERITY.WARNING] = "00eed202",
 }
+local GameVersionLookup = {
+	SeasonOfDiscovery = 1,
+	Hardcore = 2,
+	Retail = 3,
+	Wrath = 4,
+}
 
 AutoTrackSwitcher.DEBUG_SEVERITY = DEBUG_SEVERITY
 AutoTrackSwitcher.DEBUG = false
@@ -92,6 +98,18 @@ function Core:OnEnable()
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 end
 
+local function DetermineGameVersion()
+	if not C_Engraving then
+		AutoTrackSwitcher.GameVersion = GameVersionLookup.Retail
+	elseif C_Console then
+		AutoTrackSwitcher.GameVersion = GameVersionLookup.Wrath
+	elseif C_GameRules.IsHardcoreActive() then
+		AutoTrackSwitcher.GameVersion = GameVersionLookup.Hardcore
+	else
+		AutoTrackSwitcher.GameVersion = GameVersionLookup.SeasonOfDiscovery
+	end
+end
+
 function Core:Initialize()
 	self:GetTrackingData()
 
@@ -119,6 +137,8 @@ end
 
 function Core:GetTrackingData()
 	wipe(self._trackingData)
+
+	DetermineGameVersion()
 
 	local numTrackingTypes = GetNumTrackingTypes()
 	for i = 1, numTrackingTypes do
