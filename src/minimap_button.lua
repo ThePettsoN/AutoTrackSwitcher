@@ -27,4 +27,24 @@ function MinimapButton:OnEnable()
         end
     })
     LibIcon:Register(TOCNAME, gfiLDB, minimapSettings)
+    self._button = _G["LibDBIcon10_" .. TOCNAME]
+    test = AutoTrackSwitcher
+end
+
+function MinimapButton:Show()
+    LibIcon:Show(TOCNAME)
+end
+
+function MinimapButton:Hide()
+    LibIcon:Hide(TOCNAME)
+end
+
+function MinimapButton:SetStarted()
+    local icon = self._button.icon
+    icon:SetVertexColor(0, 1, 0, 1)
+end
+
+function MinimapButton:SetStopped()
+    local icon = self._button.icon
+    icon:SetVertexColor(1, 1, 1, 1)
 end
