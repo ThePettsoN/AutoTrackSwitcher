@@ -26,6 +26,9 @@ end
 function UiButton:OnEnable()
     local iconButton = AceGUI:Create("SimpleIconButton")
     iconButton:SetLabelFontSettings(self._fontSettings.path, self._fontSettings.size, self._fontSettings.flags)
+    iconButton:SetCallback("OnClick", function(_, _, button)
+        self:OnClick(button)
+    end)
     self.iconButton = iconButton
 
     self:UpdateTexture()
@@ -52,5 +55,12 @@ end
 function UiButton:OnStop()
     self:UpdateTexture()
     self.iconButton:ClearCooldown()
-    self.iconButton:SetTexture(134441)
+end
+
+function UiButton:OnClick(button)
+    if button == "LeftButton" then
+        AutoTrackSwitcher.Commands:Toggle()
+    else
+        AutoTrackSwitcher.Options:Toggle()
+    end
 end

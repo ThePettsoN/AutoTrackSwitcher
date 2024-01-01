@@ -18,8 +18,8 @@ local function onMouseDownButton(button)
 	AceGUI:ClearFocus()
 end
 
-local function onMouseUpButton(button)
-	button.obj:Fire("OnClickBody")
+local function onMouseUpButton(button, buttonPressed)
+	button.obj:Fire("OnClick", buttonPressed)
 end
 
 local function onShowButton(button)
@@ -214,7 +214,6 @@ local function Constructor()
 	local cooldown = CreateFrame("Cooldown", nil, self.content, "CooldownFrameTemplate")
 	cooldown:SetDrawBling(false)
 	cooldown:SetDrawEdge(false)
-	cooldown:SetCountdownAbbrevThreshold(0)
 	cooldown:GetRegions():SetFontObject(GameFontNormalLarge)
 	self.cooldown = cooldown
 
