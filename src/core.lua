@@ -172,6 +172,7 @@ function Core:GetTrackingData()
 				name = name,
 				index = i,
 				isNested = nested > -1,
+				texture = texture
 			}
 		end
 	end
@@ -277,6 +278,8 @@ function Core:RegisterModule(name, module, ...)
 end
 
 function Core:OnUpdate()
+	self:SendMessage("OnUpdate", self._updateInterval)
+
 	if self._disableForAreas[self._currentArea] then
 		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: In Disabled Area %q", self._currentArea))
 		return
@@ -316,6 +319,7 @@ function Core:OnUpdate()
 	else
 		SetTracking(trackingData.index, true)
 	end
+	self:SendMessage("OnTrackingChanged", trackingData.texture)
 end
 
 function Core:Start(initial)
@@ -417,9 +421,6 @@ function Core:OnConfigChange(...)
 	self:SetInterval(db:GetProfileData("tracking", "interval"), true)
 
 	if self._isRunning then
-		local db = AutoTrackSwitcher.Db
-		self._updateInterval = db:GetProfileData("tracking", "interval")
-
 		self:Stop(false)
 
 		if #self._enabledSpellIds > 0 then
