@@ -27,11 +27,17 @@ function UiButton:OnEnable()
     local iconButton = AceGUI:Create("SimpleIconButton")
     iconButton:SetLabelFontSettings(self._fontSettings.path, self._fontSettings.size, self._fontSettings.flags)
     self.iconButton = iconButton
+
+    self:UpdateTexture()
+end
+
+function UiButton:UpdateTexture()
+    local trackingTextureId = GetActualTrackingTexture()
+    self.iconButton:SetTexture(trackingTextureId)
 end
 
 function UiButton:OnStart(eventName, interval)
-    local trackingTextureId = GetActualTrackingTexture()
-    self.iconButton:SetTexture(trackingTextureId)
+    self:UpdateTexture()
     self.iconButton:SetCooldownDuration(interval)
 end
 
@@ -44,6 +50,7 @@ function UiButton:OnTrackingChanged(eventName, texture)
 end
 
 function UiButton:OnStop()
+    self:UpdateTexture()
     self.iconButton:ClearCooldown()
     self.iconButton:SetTexture(134441)
 end
