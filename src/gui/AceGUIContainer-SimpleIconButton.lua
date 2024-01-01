@@ -62,7 +62,7 @@ local function CreateButton(self)
 	self.button = button
 
 	local texture = button:CreateTexture(nil, "BACKGROUND")
-	texture:SetTexture(133939)
+	texture:SetTexture(134441)
 	texture:SetAllPoints(button)
 	texture.obj = self
 	self.texture = texture
