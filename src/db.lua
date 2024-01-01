@@ -11,14 +11,21 @@ local ENUM_DISABLE_IN_COMBAT = {
 AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT = ENUM_DISABLE_IN_COMBAT
 
 local DEFAULTS = {
-    profile = {
-        tracking = {
-            interval = 2,
-        },
-        minimap = {
-            hide = false,
-            lock = false,
-        },
+	profile = {
+		general = {
+			font = {
+				path = "Fonts\\FRIZQT__.TTF",
+				size = 32,
+				flags = "",
+			},
+		},
+		tracking = {
+			interval = 2.001,
+		},
+		minimap = {
+			hide = false,
+			lock = false,
+		},
 		conditions = {
 			disable_in_combat = ENUM_DISABLE_IN_COMBAT.UNMOUNTED,
 			disable_in_areas = {

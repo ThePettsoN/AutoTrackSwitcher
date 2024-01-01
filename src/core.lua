@@ -374,6 +374,8 @@ function Core:SetInterval(interval, skipRestart)
 	elseif interval > 60 then
 		dprint(DEBUG_SEVERITY.INFO, "Interval can not be higher than 60 seconds")
 		interval = 60
+	elseif interval == 2 then
+		interval = 2.001 -- Blizzard's Cooldown frame limits the text to >2 seconds. This hack shows it without any noticable delay
 	end
 
 	self._updateInterval = interval

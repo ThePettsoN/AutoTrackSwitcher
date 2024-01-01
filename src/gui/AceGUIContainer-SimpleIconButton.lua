@@ -62,8 +62,6 @@ local function CreateButton(self)
 	self.button = button
 
 	local texture = button:CreateTexture(nil, "BACKGROUND")
-	texture:SetWidth(width)
-	texture:SetHeight(height)
 	texture:SetTexture(133939)
 	texture:SetAllPoints(button)
 	texture.obj = self
@@ -145,17 +143,46 @@ function AceContainerSimpleIconButton:SetAlpha(alpha)
 	self.frame:SetAlpha(alpha)
 end
 
+function AceContainerSimpleIconButton:SetTexture(texture)
+	self.texture:SetTexture(texture)
+end
+
 function AceContainerSimpleIconButton:IsMoving()
 	return self._isMoving
 end
 
 function AceContainerSimpleIconButton:SetLabelFontSettings(path, size, flags)
-	self.label:SetFont(path, size, flags)
+	self.cooldown:GetRegions():SetFont(path, size, flags)
 end
 
-function AceContainerSimpleIconButton:SetText(text)
-	self.label:SetText(text)
+function AceContainerSimpleIconButton:ClearCooldown()
+	self.cooldown:Clear()
 end
+
+function AceContainerSimpleIconButton:PauseCooldown()
+	self.cooldown:Pause()
+end
+
+function AceContainerSimpleIconButton:ResumeCooldown()
+	self.cooldown:Resume()
+end
+
+function AceContainerSimpleIconButton:SetCooldownDuration(duration)
+	self.cooldown:SetCooldownDuration(duration)
+end
+
+function AceContainerSimpleIconButton:SetDrawBling(drawBling)
+	self.cooldown:SetDrawBling(drawBling)
+end
+
+function AceContainerSimpleIconButton:SetDrawEdge(drawEdge)
+	self.cooldown:SetDrawBling(drawEdge)
+end
+
+function AceContainerSimpleIconButton:SetDrawSwipe(drawSwipe)
+	self.cooldown:SetDrawBling(drawSwipe)
+end
+
 
 -- Constructor --
 local function Constructor()
@@ -183,6 +210,13 @@ local function Constructor()
 	local button, texture = CreateButton(self)
 	self.button = button
 	self.texture = texture
+
+	local cooldown = CreateFrame("Cooldown", nil, self.content, "CooldownFrameTemplate")
+	cooldown:SetDrawBling(false)
+	cooldown:SetDrawEdge(false)
+	cooldown:SetCountdownAbbrevThreshold(0)
+	cooldown:GetRegions():SetFontObject(GameFontNormalLarge)
+	self.cooldown = cooldown
 
 	-- Callbacks
 	button:SetScript("OnMouseDown", onMouseDownButton)
