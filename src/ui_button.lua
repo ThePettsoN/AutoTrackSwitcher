@@ -14,7 +14,7 @@ end
 
 function UiButton:OnInitialize()
     self._db = AutoTrackSwitcher.Db
-    self._fontSettings = self._db:GetProfileData("general", "font")
+    self._fontSettings = self._db:GetProfileData("ui", "button", "font")
 
     self:RegisterMessage("OnStart", "OnStart")
     self:RegisterMessage("OnStop", "OnStop")
@@ -26,12 +26,16 @@ end
 function UiButton:OnEnable()
     local iconButton = AceGUI:Create("SimpleIconButton")
     iconButton:SetLabelFontSettings(self._fontSettings.path, self._fontSettings.size, self._fontSettings.flags)
-    iconButton:SetCallback("OnClick", function(_, _, button)
-        self:OnClick(button)
-    end)
-    self.iconButton = iconButton
+    iconButton:SetCallback("OnClick", function(_, _, button) self:OnClick(button) end)
+    iconButton:SetCallback("OnStopMoving", function(_, _, x, y) self:OnStopMoving(x, y) end)
 
+    self.iconButton = iconButton
     self:UpdateTexture()
+
+    local positionData = self._db:GetProfileData("ui", "button", "position")
+    if positionData.stored then
+        iconButton:SetPosition(positionData.x, positionData.y)
+    end
 end
 
 function UiButton:UpdateTexture()
@@ -63,4 +67,10 @@ function UiButton:OnClick(button)
     else
         AutoTrackSwitcher.Options:Toggle()
     end
+end
+
+function UiButton:OnStopMoving(x, y)
+	self._db:SetProfileData("x", floor(x + 0.5), "ui", "button", "position")
+	self._db:SetProfileData("y", floor(y + 0.5), "ui", "button", "position")
+	self._db:SetProfileData("stored", true, "ui", "button", "position")
 end

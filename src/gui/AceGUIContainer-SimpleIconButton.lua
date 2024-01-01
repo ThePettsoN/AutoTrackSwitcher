@@ -14,12 +14,22 @@ local Type = "SimpleIconButton"
 local Version = 1
 
 -- Callbacks --
-local function onMouseDownButton(button)
+local function onMouseDownButton(button, buttonPressed)
+	if buttonPressed == "LeftButton" and IsShiftKeyDown() then
+		local self = button.obj
+		self:StartMoving()
+	end
+
 	AceGUI:ClearFocus()
 end
 
 local function onMouseUpButton(button, buttonPressed)
-	button.obj:Fire("OnClick", buttonPressed)
+	local self = button.obj
+	if self:IsMoving() then
+		self:StopMoving()
+	else
+		button.obj:Fire("OnClick", buttonPressed)
+	end
 end
 
 local function onShowButton(button)
@@ -151,6 +161,26 @@ function AceContainerSimpleIconButton:IsMoving()
 	return self._isMoving
 end
 
+function AceContainerSimpleIconButton:StartMoving()
+	self._isMoving = true
+	self.frame:StartMoving()
+	self:Fire("OnStartMoving")
+end
+
+function AceContainerSimpleIconButton:StopMoving()
+	self._isMoving = false
+	local frame = self.frame
+	frame:StopMovingOrSizing()
+
+	local status = self.status or self.localstatus
+	status.width = frame:GetWidth()
+	status.height = frame:GetHeight()
+	status.top = frame:GetTop()
+	status.left = frame:GetLeft()
+
+	self:Fire("OnStopMoving", status.left, status.top - status.height)
+end
+
 function AceContainerSimpleIconButton:SetLabelFontSettings(path, size, flags)
 	self.cooldown:GetRegions():SetFont(path, size, flags)
 end
@@ -183,6 +213,11 @@ function AceContainerSimpleIconButton:SetDrawSwipe(drawSwipe)
 	self.cooldown:SetDrawBling(drawSwipe)
 end
 
+function AceContainerSimpleIconButton:SetPosition(x, y)
+	self:ClearAllPoints()
+	self:SetPoint("BOTTOMLEFT", x, y)
+end
+
 
 -- Constructor --
 local function Constructor()
@@ -201,6 +236,7 @@ local function Constructor()
 	frame:SetPoint("BOTTOMLEFT", UIParent, "CENTER", 0, 0)
 	frame:SetFrameStrata("MEDIUM")
 	frame:SetToplevel(true)
+	frame:SetMovable(true)
 
 	-- Create Objects
 	self.content = CreateContainer(self)

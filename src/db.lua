@@ -12,11 +12,18 @@ AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT = ENUM_DISABLE_IN_COMBAT
 
 local DEFAULTS = {
 	profile = {
-		general = {
-			font = {
-				path = "Fonts\\FRIZQT__.TTF",
-				size = 32,
-				flags = "",
+		ui = {
+			button = {
+				font = {
+					path = "Fonts\\FRIZQT__.TTF",
+					size = 32,
+					flags = "",
+				},
+				position  = {
+					x = 0,
+					y = 0,
+					stored = false
+				},
 			},
 		},
 		tracking = {
