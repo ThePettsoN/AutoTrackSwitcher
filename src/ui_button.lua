@@ -25,17 +25,36 @@ end
 
 function UiButton:OnEnable()
     local iconButton = AceGUI:Create("SimpleIconButton")
-    iconButton:SetLabelFontSettings(self._fontSettings.path, self._fontSettings.size, self._fontSettings.flags)
+    
     iconButton:SetCallback("OnClick", function(_, _, button) self:OnClick(button) end)
     iconButton:SetCallback("OnStopMoving", function(_, _, x, y) self:OnStopMoving(x, y) end)
 
     self.iconButton = iconButton
     self:UpdateTexture()
 
-    local positionData = self._db:GetProfileData("ui", "button", "position")
-    if positionData.stored then
-        iconButton:SetPosition(positionData.x, positionData.y)
+
+    -- db settings
+
+    local buttonData = self._db:GetProfileData("ui", "button")
+
+    -- Font
+    local fontSettings = buttonData.font
+    iconButton:SetLabelFontSettings(fontSettings.path, fontSettings.size, fontSettings.flags)
+
+    -- Position
+    local position = buttonData.position
+    if position.stored then
+        iconButton:SetPosition(position.x, position.y)
     end
+
+    -- Size
+    local size = buttonData.size
+    iconButton:SetSize(size.width, size.height)
+
+    -- Cosmetics
+    local cosmetics = buttonData.cosmetics
+    iconButton:SetDrawSwipe(cosmetics.swipe)
+    iconButton:SetShowText(cosmetics.show_text)
 end
 
 function UiButton:UpdateTexture()

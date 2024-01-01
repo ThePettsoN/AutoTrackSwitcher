@@ -68,6 +68,7 @@ local function CreateButton(self)
 	button:RegisterForClicks("AnyDown", "AnyUp")
 	button:SetHighlightTexture(130718)
 	button:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress")
+
 	button.obj = self
 	self.button = button
 
@@ -218,6 +219,13 @@ function AceContainerSimpleIconButton:SetPosition(x, y)
 	self:SetPoint("BOTTOMLEFT", x, y)
 end
 
+function AceContainerSimpleIconButton:SetDrawSwipe(drawSwipe)
+	self.cooldown:SetDrawSwipe(drawSwipe)
+end
+
+function AceContainerSimpleIconButton:SetShowText(showText)
+	self.cooldown:SetHideCountdownNumbers(not showText)
+end
 
 -- Constructor --
 local function Constructor()

@@ -24,6 +24,19 @@ local DEFAULTS = {
 					y = 0,
 					stored = false
 				},
+				size = {
+					width = 64,
+					height = 64,
+				},
+				cosmetics = {
+					swipe = true,
+					show_text = true,
+				},
+				conditions = {
+					show = true,
+					show_while_stopped = true,
+					show_while_not_tracking = true,
+				}
 			},
 		},
 		tracking = {
