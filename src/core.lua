@@ -367,7 +367,7 @@ function Core:IsRunning()
 	return self._isRunning
 end
 
-function Core:SetInterval(interval)
+function Core:SetInterval(interval, skipRestart)
 	if interval < 2 then
 		dprint(DEBUG_SEVERITY.INFO, "Interval can not be lower than 2 seconds")
 		interval = 2
@@ -378,7 +378,7 @@ function Core:SetInterval(interval)
 
 	self._updateInterval = interval
 
-	if self._isRunning then
+	if not skipRestart and self._isRunning then
 		dprint(DEBUG_SEVERITY.INFO, "Restarting timer")
 		if self._timer then
 			self:CancelTimer(self._timer)
@@ -410,6 +410,9 @@ end
 function Core:OnConfigChange(...)
 	self:SetActiveTracking()
 	self:SetUpdateConditions()
+
+	local db = AutoTrackSwitcher.Db
+	self:SetInterval(db:GetProfileData("tracking", "interval"), true)
 
 	if self._isRunning then
 		local db = AutoTrackSwitcher.Db
