@@ -212,6 +212,11 @@ end
 
 local function isTracking(trackingData)
 	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+
+		if not MiniMapTrackingFrame:IsShown() then
+			return false
+		end
+
 		local trackingTextureId = GetTrackingTexture()
 		if not trackingTextureId then
 			return false
