@@ -18,6 +18,7 @@ src/core.lua
 src/db.lua
 src/commands.lua
 src/minimap_button.lua
+src/ui_button.lua
 
 src/options/main.lua
 src/options/templates/general.lua
