@@ -34,8 +34,7 @@ local DEFAULTS = {
 				},
 				conditions = {
 					show = true,
-					show_while_stopped = true,
-					show_while_not_tracking = true,
+					show_while_stopped = true
 				}
 			},
 		},

@@ -31,30 +31,45 @@ function UiButton:OnEnable()
 
     self.iconButton = iconButton
     self:UpdateTexture()
+    self:ApplyConfig()
+end
 
-
+function UiButton:ApplyConfig()
     -- db settings
-
+    local button = self.iconButton
     local buttonData = self._db:GetProfileData("ui", "button")
 
     -- Font
     local fontSettings = buttonData.font
-    iconButton:SetLabelFontSettings(fontSettings.path, fontSettings.size, fontSettings.flags)
+    button:SetLabelFontSettings(fontSettings.path, fontSettings.size, fontSettings.flags)
 
     -- Position
     local position = buttonData.position
     if position.stored then
-        iconButton:SetPosition(position.x, position.y)
+        button:SetPosition(position.x, position.y)
     end
 
     -- Size
     local size = buttonData.size
-    iconButton:SetSize(size.width, size.height)
+    button:SetSize(size.width, size.height)
 
     -- Cosmetics
     local cosmetics = buttonData.cosmetics
-    iconButton:SetDrawSwipe(cosmetics.swipe)
-    iconButton:SetShowText(cosmetics.show_text)
+    button:SetDrawSwipe(cosmetics.swipe)
+    button:SetShowText(cosmetics.show_text)
+
+    self:UpdateVisibility()
+end
+
+function UiButton:UpdateVisibility()
+    local conditions = self._db:GetProfileData("ui", "button", "conditions")
+    if not conditions.show_while_stopped and not self._running then
+        self.iconButton:Hide()
+    elseif conditions.show then
+        self.iconButton:Show()
+    else
+        self.iconButton:Hide()
+    end
 end
 
 function UiButton:UpdateTexture()
@@ -65,6 +80,8 @@ end
 function UiButton:OnStart(eventName, interval)
     self:UpdateTexture()
     self.iconButton:SetCooldownDuration(interval)
+    self._running = true
+    self:UpdateVisibility()
 end
 
 function UiButton:OnUpdate(eventName, interval)
@@ -78,6 +95,8 @@ end
 function UiButton:OnStop()
     self:UpdateTexture()
     self.iconButton:ClearCooldown()
+    self._running = false
+    self:UpdateVisibility()
 end
 
 function UiButton:OnClick(button)
