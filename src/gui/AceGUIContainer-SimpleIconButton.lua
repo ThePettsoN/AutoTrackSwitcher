@@ -39,7 +39,9 @@ local function onLeaveButton(button)
 end
 
 -- Private Functions --
-local function CreateContainer(self, frame)
+local function CreateContainer(self)
+	local frame = self.frame
+
 	local content = CreateFrame("Frame", "ContainerFrame", frame)
 	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
@@ -48,10 +50,11 @@ local function CreateContainer(self, frame)
 	return content
 end
 
-local function CreateButton(self, container, width, height)
-	local button = CreateFrame("Button", nil, self.content)
-	button:SetPoint("CENTER")
-	button:SetSize(width, height)
+local function CreateButton(self)
+	local content = self.content
+	local button = CreateFrame("Button", nil, content)
+	button:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	button:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
 	button:RegisterForClicks("AnyDown", "AnyUp")
 	button:SetHighlightTexture(130718)
 	button:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress")
@@ -138,15 +141,6 @@ function AceContainerSimpleIconButton:SetSize(width, height)
 	self:SetHeight(height)
 end
 
-function AceContainerSimpleIconButton:SetIsMovable(isMovable)
-	if isMovable then
-		self.frame:SetMovable(true)
-		self.title:EnableMouse()
-		self.title:SetScript("OnMouseDown", onMouseDownTitle)
-		self.title:SetScript("OnMouseUp", onMouseUpTitle)
-	end
-end
-
 function AceContainerSimpleIconButton:SetAlpha(alpha)
 	self.frame:SetAlpha(alpha)
 end
@@ -182,11 +176,11 @@ local function Constructor()
 	frame:SetToplevel(true)
 
 	-- Create Objects
-	self.content = CreateContainer(self, frame)
+	self.content = CreateContainer(self)
 	AceGUI:RegisterAsContainer(self)
 	self:SetLayout("Fill")
 
-	local button, texture = CreateButton(self, self.content, width, height)
+	local button, texture = CreateButton(self)
 	self.button = button
 	self.texture = texture
 
