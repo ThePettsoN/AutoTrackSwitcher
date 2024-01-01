@@ -336,7 +336,7 @@ function Core:Start(initial)
 
 	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self._updateInterval)
 	self._isRunning = true
-	AutoTrackSwitcher.MinimapButton:SetStarted()
+	self:SendMessage("OnStart", self._updateInterval)
 
 	if initial then
 		print("Addon started!")
@@ -356,7 +356,7 @@ function Core:Stop(initial)
 	end
 
 	self._isRunning = false
-	AutoTrackSwitcher.MinimapButton:SetStopped()
+	self:SendMessage("OnStop")
 
 	if initial then
 		print("Addon stopped!")

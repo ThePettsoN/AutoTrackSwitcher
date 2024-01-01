@@ -4,9 +4,11 @@ local tooltipText = string.format("%s\n\nLeft-Click: Start/Stop AutoTrackSwitch\
 local LibIcon = LibStub("LibDBIcon-1.0")
 
 local MinimapButton = {}
-AutoTrackSwitcher.Core:RegisterModule("MinimapButton", MinimapButton)
+AutoTrackSwitcher.Core:RegisterModule("MinimapButton", MinimapButton, "AceEvent-3.0")
 
 function MinimapButton:OnInitialize()
+    self:RegisterMessage("OnStart", "OnStart")
+    self:RegisterMessage("OnStop", "OnStop")
 end
 
 function MinimapButton:OnEnable()
@@ -38,12 +40,12 @@ function MinimapButton:Hide()
     LibIcon:Hide(TOCNAME)
 end
 
-function MinimapButton:SetStarted()
+function MinimapButton:OnStart(eventName, interval)
     local icon = self._button.icon
     icon:SetVertexColor(0, 1, 0, 1)
 end
 
-function MinimapButton:SetStopped()
+function MinimapButton:OnStop(eventName)
     local icon = self._button.icon
     icon:SetVertexColor(1, 1, 1, 1)
 end
