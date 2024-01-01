@@ -12,6 +12,7 @@
 ## X-Wago-ID: RaN0Al6j
 
 embeds.xml
+src/gui/AceGUIContainer-SimpleIconButton.lua
 
 src/core.lua
 src/db.lua
