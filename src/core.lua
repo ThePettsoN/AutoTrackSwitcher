@@ -305,6 +305,12 @@ function Core:OnUpdate()
 		return
 	end
 
+	local spell = UnitCastingInfo("player")
+	if spell then
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Casting Spell"))
+		return
+	end
+
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._enabledSpellIds) + 1
 	local spellId = self._enabledSpellIds[self._currentUpdateIndex]
 	local trackingData = self._trackingData[spellId]
