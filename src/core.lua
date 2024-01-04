@@ -363,6 +363,7 @@ function Core:Start(initial)
 	self:SendMessage("OnStart", self._updateInterval)
 
 	if initial then
+		self:OnUpdate()
 		print("Addon started!")
 	end
 end
