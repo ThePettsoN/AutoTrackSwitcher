@@ -8,7 +8,7 @@ local function generalsGroup(order, db)
     for spelldId, data in pairs(availableTrackingSpells) do
         trackingSpellLoc[spelldId] = data.name
     end
-
+    
     return {
         type = "group",
         name = "General",
@@ -54,7 +54,7 @@ local function conditionsGroup(order, db)
         [const.ENUM_DISABLE_IN_COMBAT.NO] = "No",
         [const.ENUM_DISABLE_IN_COMBAT.UNMOUNTED] = "Only while unmounted",
     }
-
+    
     local areaLocalization = {
         world = "World",
         party = "Dungeon",
@@ -63,7 +63,7 @@ local function conditionsGroup(order, db)
         pvp = "Battleground",
         city = "City",
     }
-
+    
     return {
         type = "group",
         name = "Conditions",
@@ -128,25 +128,25 @@ end
 
 
 local function optionsTemplate()
-	local db = AutoTrackSwitcher.Db
-	local args = {
+    local db = AutoTrackSwitcher.Db
+    local args = {
         header = {
-			order = 1,
-			type = "header",
-			width = "full",
-			name = "General",
-		},
+            order = 1,
+            type = "header",
+            width = "full",
+            name = "General",
+        },
         general = generalsGroup(2, db),
         conditions = conditionsGroup(3, db),
         -- conditions = conditionsGroup(4, db),
-	}
-
-	return {
-		type = "group",
-		name = "General",
-		order = 1,
-		args = args
-	}
+    }
+    
+    return {
+        type = "group",
+        name = "General",
+        order = 1,
+        args = args
+    }
 end
 
 options.AddOptionTemplate("general", optionsTemplate)

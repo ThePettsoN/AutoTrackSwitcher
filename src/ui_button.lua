@@ -20,6 +20,7 @@ function UiButton:OnInitialize()
     self:RegisterMessage("OnStop", "OnStop")
     self:RegisterMessage("OnUpdate", "OnUpdate")
     self:RegisterMessage("OnTrackingChanged", "OnTrackingChanged")
+    self:RegisterMessage("ConfigChange", "OnConfigChange")
     
 end
 
@@ -111,4 +112,8 @@ function UiButton:OnStopMoving(x, y)
 	self._db:SetProfileData("x", floor(x + 0.5), "ui", "button", "position")
 	self._db:SetProfileData("y", floor(y + 0.5), "ui", "button", "position")
 	self._db:SetProfileData("stored", true, "ui", "button", "position")
+end
+
+function UiButton:OnConfigChange()
+    self:ApplyConfig()
 end

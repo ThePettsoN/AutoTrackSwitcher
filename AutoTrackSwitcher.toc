@@ -22,3 +22,4 @@ src/ui_button.lua
 
 src/options/main.lua
 src/options/templates/general.lua
+src/options/templates/ui.lua
