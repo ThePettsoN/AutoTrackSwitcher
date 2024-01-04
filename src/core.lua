@@ -94,6 +94,8 @@ function Core:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnPlayerEnteringWorld")
 	self:RegisterEvent("SKILL_LINES_CHANGED", "OnSkillLinesChanged")
 	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnLearnedSpellInTab")
+	self:RegisterEvent("ITEM_LOCKED", "OnItemLocked")
+	self:RegisterEvent("ITEM_UNLOCKED", "OnItemUnlocked")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 end
@@ -280,6 +282,12 @@ end
 function Core:OnUpdate()
 	self:SendMessage("OnUpdate", self._updateInterval)
 
+	if self._item_locked then
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Item locked"))
+		return
+	end
+
+
 	if self._disableForAreas[self._currentArea] then
 		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: In Disabled Area %q", self._currentArea))
 		return
@@ -434,3 +442,12 @@ function Core:OnConfigChange(...)
 		end
 	end
 end
+
+function Core:OnItemLocked()
+	self._item_locked = true
+end
+
+function Core:OnItemUnlocked()
+	self._item_locked = false
+end
+
