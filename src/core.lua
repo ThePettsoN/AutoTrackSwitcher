@@ -96,6 +96,8 @@ function Core:OnEnable()
 	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnLearnedSpellInTab")
 	self:RegisterEvent("ITEM_LOCKED", "OnItemLocked")
 	self:RegisterEvent("ITEM_UNLOCKED", "OnItemUnlocked")
+	self:RegisterEvent("LOOT_OPENED", "OnLootOpened")
+	self:RegisterEvent("LOOT_CLOSED", "OnLootClosed")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 end
@@ -287,6 +289,10 @@ function Core:OnUpdate()
 		return
 	end
 
+	if self._loot_opened then
+		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Loot Window opened"))
+		return
+	end
 
 	if self._disableForAreas[self._currentArea] then
 		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: In Disabled Area %q", self._currentArea))
@@ -451,3 +457,12 @@ function Core:OnItemUnlocked()
 	self._item_locked = false
 end
 
+function Core:OnLootOpened(autoLoot)
+	if not autoLoot then
+		self._loot_opened = true
+	end
+end
+
+function Core:OnLootClosed()
+	self._loot_opened = false
+end
