@@ -17,6 +17,9 @@ local Version = 1
 local function onMouseDownButton(button, buttonPressed)
 	if buttonPressed == "LeftButton" and IsShiftKeyDown() then
 		local self = button.obj
+		if self.tooltipText then
+			self.tooltip:Hide()
+		end
 		self:StartMoving()
 	end
 
@@ -41,11 +44,23 @@ local function onHideButton(button)
 end
 
 local function onEnterButton(button)
-	button.obj:Fire("OnEnter")
+	local self = button.obj
+	self:Fire("OnEnter")
+
+	if self.tooltipText then
+		self.tooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+		self.tooltip:SetText(self.tooltipText)
+		self.tooltip:Show()
+	end
 end
 
 local function onLeaveButton(button)
-	button.obj:Fire("OnLeave")
+	local self = button.obj
+	self:Fire("OnLeave")
+
+	if self.tooltipText then
+		self.tooltip:Hide()
+	end
 end
 
 -- Private Functions --
@@ -225,6 +240,13 @@ end
 
 function AceContainerSimpleIconButton:SetShowText(showText)
 	self.cooldown:SetHideCountdownNumbers(not showText)
+end
+
+function AceContainerSimpleIconButton:SetTooltip(text)
+	self.tooltipText = text
+	if not self.tooltip then
+		self.tooltip = CreateFrame("GameTooltip", "AceContainerSimpleIconButton", UIParent, "SharedTooltipTemplate")
+	end
 end
 
 -- Constructor --

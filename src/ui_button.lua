@@ -29,6 +29,7 @@ function UiButton:OnEnable()
     
     iconButton:SetCallback("OnClick", function(_, _, button) self:OnClick(button) end)
     iconButton:SetCallback("OnStopMoving", function(_, _, x, y) self:OnStopMoving(x, y) end)
+    iconButton:SetTooltip(string.format("%s\n\nLeft-Click: Start/Stop AutoTrackSwitch\nRight-Click: Open Settings\nShift+Left-Click: Move this button", TOCNAME))
 
     self.iconButton = iconButton
     self:UpdateTexture()
