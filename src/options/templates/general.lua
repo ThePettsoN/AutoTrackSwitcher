@@ -108,20 +108,7 @@ local function conditionsGroup(order, db)
                 set = function(info, newValue)
                     options:SetSetting("SetProfileData", "disable_while_falling", newValue, "conditions")
                 end,
-            },
-            disable_while_dead = {
-                type = "toggle",
-                width = "full",
-                order = 4,
-                name = "Disable while dead",
-                desc = "Disable AutoTrackSwitcher while the player is dead.",
-                get = function(info)
-                    return db:GetProfileData("conditions", "disable_while_dead")
-                end,
-                set = function(info, newValue)
-                    options:SetSetting("SetProfileData", "disable_while_dead", newValue, "conditions")
-                end,
-            },
+            }
         },
     }
 end

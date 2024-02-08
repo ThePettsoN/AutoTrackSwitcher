@@ -55,8 +55,7 @@ local DEFAULTS = {
 				pvp = true,
 				city = true,
 			},
-			disable_while_falling = true,
-			disable_while_dead = true,
+			disable_while_falling = true
 		}
     },
     char = {
