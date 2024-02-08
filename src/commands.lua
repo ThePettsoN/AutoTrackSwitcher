@@ -246,7 +246,7 @@ function Commands:_settings(nextPosition, args)
 end
 
 function Commands:Toggle()
-    if AutoTrackSwitcher.Core:IsRunning() then
+    if AutoTrackSwitcher.Core:IsStarted() then
         AutoTrackSwitcher.Core:Stop(true)
     else
         AutoTrackSwitcher.Core:Start(true)
