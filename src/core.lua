@@ -1,74 +1,18 @@
 local _, AutoTrackSwitcher = ...
 local Core = LibStub("AceAddon-3.0"):NewAddon("AutoTrackSwitcherCore", "AceEvent-3.0", "AceTimer-3.0")
 AutoTrackSwitcher.Core = Core
+local Utils = LibStub:GetLibrary("PUtils-1.0")
 
-AutoTrackSwitcher.Const = {
-	CLASS_IDS = {
-		NONE = 0,
-		WARRIOR = 1,
-		PALADIN = 2,
-		HUNTER = 3,
-		ROGUE = 4,
-		PRIEST = 5,
-		DEATH_KNIGHT = 6,
-		SHAMAN = 7,
-		MAGE = 8,
-		WARLOCK = 9,
-		DRUID = 11,
-	},
-	SHAPESHIFT_FORM_IDS = {
-		DRUID = {
-			AQUATIC_FORM = 2,
-			TRAVEL_FORM = 4,
-			FLIGHT_FORM = 5,
-			FLIGHT_FORM_BALANCE = 6
-		},
-		SHAMAN = {
-			GHOST_WOLF = 1,
-		}
-	}
-}
-
-local DEBUG_SEVERITY = {
-	INFO = "INFO",
-	DEBUG = "DEBUG",
-	ERROR = "ERROR",
-	WARNING = "WARNING",
-}
-local SEVERITY_COLOR_LOOKUP = {
-	[DEBUG_SEVERITY.INFO] = "00ffffff",
-	[DEBUG_SEVERITY.DEBUG] = "00ffffff",
-	[DEBUG_SEVERITY.ERROR] = "00ff0000",
-	[DEBUG_SEVERITY.WARNING] = "00eed202",
-}
-local GameVersionLookup = {
-	SeasonOfDiscovery = 1,
-	Hardcore = 2,
-	Retail = 3,
-	Wrath = 4,
-}
-
-AutoTrackSwitcher.DEBUG_SEVERITY = DEBUG_SEVERITY
-AutoTrackSwitcher.DEBUG = true
-
-AutoTrackSwitcher.dprint = function(severity, msg, ...)
-	if AutoTrackSwitcher.DEBUG then
-		print(string.format("[AutoTrackSwitcher]|c%s[%s] %s|r", SEVERITY_COLOR_LOOKUP[severity], severity, string.format(msg, ...)))
-	end
-end
-
-AutoTrackSwitcher.print = function(msg, ...)
-	print(string.format("[AutoTrackSwitcher] %s", string.format(msg, ...)))
-end
-
+AutoTrackSwitcher.Utils = Utils
+AutoTrackSwitcher.Const = {}
+ 
 -- Lua API
-local dprint = AutoTrackSwitcher.dprint
-local print = AutoTrackSwitcher.print
 local tRemove = table.remove
-local stringformat = string.format
 local wipe = wipe
 
 -- WoW API
+local GetContainerNumFreeSlots = GetContainerNumFreeSlots or C_Container.GetContainerNumFreeSlots
+local GetContainerItemInfo = GetContainerItemInfo or C_Container.GetContainerItemInfo
 local GetNumTrackingTypes = GetNumTrackingTypes or C_Minimap.GetNumTrackingTypes
 local GetTrackingInfo = GetTrackingInfo or C_Minimap.GetTrackingInfo
 local UnitAffectingCombat = UnitAffectingCombat
@@ -82,20 +26,8 @@ local IsSpellKnown = IsSpellKnown
 local GetShapeshiftForm = GetShapeshiftForm
 local UnitClass = UnitClass
 
-local function DetermineGameVersion()
-	if not C_Engraving then
-		AutoTrackSwitcher.GameVersion = GameVersionLookup.Retail
-	elseif C_Console then
-		AutoTrackSwitcher.GameVersion = GameVersionLookup.Wrath
-	elseif C_GameRules.IsHardcoreActive() then
-		AutoTrackSwitcher.GameVersion = GameVersionLookup.Hardcore
-	else
-		AutoTrackSwitcher.GameVersion = GameVersionLookup.SeasonOfDiscovery
-	end
-end
-
 local function isTracking(trackingData)
-	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
 		if not MiniMapTrackingFrame:IsShown() then
 			return false
 		end
@@ -113,7 +45,7 @@ local function isTracking(trackingData)
 end
 
 local function TrackSpell(trackingData)
-	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
 		CastSpellByName(trackingData.name)
 	else
 		SetTracking(trackingData.index, true)
@@ -124,6 +56,10 @@ local function falseFunc(...)
 	return false
 end
 
+local function trueFunc(...)
+	return true
+end
+
 local function conditionUnmountedCombatFunc(...)
 	if UnitAffectingCombat("player") then
 		if IsMounted() then
@@ -131,9 +67,8 @@ local function conditionUnmountedCombatFunc(...)
 		end
 
 		local _, _, classId = UnitClass("player")
-		local consts = AutoTrackSwitcher.Const
-		if classId == consts.CLASS_IDS.DRUID then
-			local druidShapeshiftFormIds = consts.SHAPESHIFT_FORM_IDS.DRUID
+		if classId == Utils.game.Druid then
+			local druidShapeshiftFormIds = Utils.game.ShapeshiftIds.Druid
 
 			local shapeshiftFormId = GetShapeshiftForm()
 			if shapeshiftFormId == druidShapeshiftFormIds.AQUATIC_FORM or
@@ -142,9 +77,9 @@ local function conditionUnmountedCombatFunc(...)
 			shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM then
 				return false
 			end
-		elseif classId == consts.CLASS_IDS.SHAMAN then
+		elseif classId == Utils.game.Shaman then
 			local shapeshiftForm = GetShapeshiftForm()
-			if shapeshiftForm == consts.SHAPESHIFT_FORM_IDS.SHAMAN.GHOST_WOLF then -- If shaman and in ghost wolf
+			if shapeshiftForm == Utils.game.ShapeshiftIds.Shaman.GhostWolf then -- If shaman and in ghost wolf
 				return false
 			end
 		end
@@ -153,7 +88,32 @@ local function conditionUnmountedCombatFunc(...)
 	end
 end
 
+local Free = 1
+local ItemLocked = bit.lshift(Free, 1)
+local LootOpened = bit.lshift(Free, 2)
+local ZoneChanged = bit.lshift(Free, 3)
+local PlayerCombat = bit.lshift(Free, 4)
+local PlayerDead = bit.lshift(Free, 5)
+local PlayerCasting = bit.lshift(Free, 6)
+
+local _bit = Free
+
+local function bAdd(self, mask, name)
+	self:debug("Adding %s to %s (%s)", tostring(mask), tostring(_bit), name)
+	_bit = bit.bor(_bit, mask)
+	self:debug("(A) New bit %s", tostring(_bit))
+end
+
+local function bRemove(self, mask, name)
+	self:debug("Removing %s from %s (%s)", tostring(mask), tostring(_bit), name)
+	_bit = bit.band(_bit, bit.bnot(mask))
+	self:debug("(R) New bit %s", tostring(_bit))
+end
+
 function Core:OnInitialize()
+	Utils.debug.initialize(self, "ATS Core")
+	self:setSeverity("Debug")
+
 	self._currentUpdateIndex = 0
 	self._timer = nil
 
@@ -162,6 +122,8 @@ function Core:OnInitialize()
 
 	self._trackingData = {}
 	self._trackedSpellIds = {}
+	
+	self._bit = 0
 end
 
 function Core:OnEnable()
@@ -170,13 +132,16 @@ function Core:OnEnable()
 	self:RegisterEvent("LEARNED_SPELL_IN_TAB", "OnLearnedSpellInTab")
 	self:RegisterEvent("ITEM_LOCKED", "OnItemLocked")
 	self:RegisterEvent("ITEM_UNLOCKED", "OnItemUnlocked")
+	self:RegisterEvent("BAG_UPDATE", "OnBagUpdate")
 	self:RegisterEvent("LOOT_OPENED", "OnLootOpened")
 	self:RegisterEvent("LOOT_CLOSED", "OnLootClosed")
-	self:RegisterEvent("PLAYER_ENTER_COMBAT", "OnPlayerEnterCombat")
-	self:RegisterEvent("PLAYER_LEAVE_COMBAT", "OnPlayerLeaveCombat")
+	self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnPlayerEnterCombat")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnPlayerLeaveCombat")
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnZoneChanged")
 	self:RegisterEvent("PLAYER_DEAD", "OnPlayerDead")
 	self:RegisterEvent("PLAYER_UNGHOST", "OnPlayerUnGhost")
+	self:RegisterEvent("UNIT_SPELLCAST_START", "OnSpellcastStart")
+	self:RegisterEvent("UNIT_SPELLCAST_STOP", "OnSpellcastStop")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 end
@@ -184,6 +149,7 @@ end
 function Core:RegisterModule(name, module, ...)
 	local mod = self:NewModule(name, module, ...)
 	AutoTrackSwitcher[name] = mod
+	Utils.debug.initialize(mod, "ATS - " .. name)
 end
 
 function Core:Initialize()
@@ -191,21 +157,17 @@ function Core:Initialize()
 end
 
 function Core:InitializeTrackingData()
-	if not AutoTrackSwitcher.GameVersion then
-		DetermineGameVersion()
-	end
-
 	self:UpdateTrackingData()
 
 	local db = AutoTrackSwitcher.Db
 	self._updateInterval = db:GetProfileData("tracking", "interval")
 
 	if db:GetCharacterData("first_time") then
-		dprint(DEBUG_SEVERITY.INFO, "First time")
+		self:debug("First Time")
 		local enabledSpellIds = {}
 		for spellId, data in pairs(self._trackingData) do
 			if not data.isNested then
-				dprint(DEBUG_SEVERITY.INFO, "Enabling tracking skill %q", data.name)
+				self:debug("Enabling tracking skill %q", data.name)
 				enabledSpellIds[spellId] = true
 				self._trackedSpellIds[#self._trackedSpellIds+1] = spellId
 			end
@@ -220,13 +182,13 @@ function Core:InitializeTrackingData()
 end
 
 function Core:SetUpdateConditions()
-	dprint(DEBUG_SEVERITY.INFO, "Update conditions")
+	self:debug("Update conditions")
 	local db = AutoTrackSwitcher.Db
 	local conditions = db:GetProfileData("conditions")
-	local const = AutoTrackSwitcher.Const
 
+	local const = AutoTrackSwitcher.Const
 	if conditions.disable_in_combat == const.ENUM_DISABLE_IN_COMBAT.YES then
-		self._disableInCombatFunc = UnitAffectingCombat
+		self._disableInCombatFunc = trueFunc
 	elseif conditions.disable_in_combat == const.ENUM_DISABLE_IN_COMBAT.UNMOUNTED then
 		self._disableInCombatFunc = conditionUnmountedCombatFunc
 	else
@@ -243,10 +205,8 @@ end
 function Core:UpdateTrackingData()
 	wipe(self._trackingData)
 
-	DetermineGameVersion()
-	if AutoTrackSwitcher.GameVersion == GameVersionLookup.SeasonOfDiscovery then
+	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
 		-- Hardcoded for now. Should probably refactor at some point
-
 		if IsSpellKnown(2580) then -- Mining
 			local name = GetSpellInfo(2580)
 			self._trackingData[2580] = {
@@ -292,10 +252,10 @@ function Core:SetActiveTracking()
 	local enabledSpellIds = db:GetCharacterData("tracking", "enabled_spell_ids")
 	for spellId, enabled in pairs(enabledSpellIds) do
 		if enabled and self._trackingData[spellId] then
-			dprint(DEBUG_SEVERITY.INFO, "Enabling tracking skill %q", self._trackingData[spellId].name)
+			self:debug("Enabling tracking skill %q", self._trackingData[spellId].name)
 			self._trackedSpellIds[#self._trackedSpellIds + 1] = spellId
 		else
-			dprint(DEBUG_SEVERITY.INFO, "Removing invalid tracking skill %q", spellId)
+			self:debug("Removing invalid tracking skill %q", spellId)
 			enabledSpellIds[spellId] = nil
 			updateDb = true
 		end
@@ -307,14 +267,14 @@ function Core:SetActiveTracking()
 end
 
 function Core:Start(isInitial)
-	dprint(DEBUG_SEVERITY.INFO, "Starting")
-	if self._running then
-		print("AutoTrackSwitcher already running!")
+	self:debug("Starting")
+	if isInitial and self._running then
+		Utils.string.printf("AutoTrackSwitcher already running!")
 		return
 	end
 
 	if #self._trackedSpellIds == 0 then
-		dprint(DEBUG_SEVERITY.INFO, "No tracking spells enabled")
+		self:debug("No tracking spells enabled")
 		return
 	end
 
@@ -322,21 +282,29 @@ function Core:Start(isInitial)
 		self:CancelTimer(self._timer)
 	end
 
-	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self._updateInterval)
 	self._started = true
+	if isInitial then
+		Utils.string.printf("AutoTrackSwitcher started!")
+	end
+
+	if _bit ~= Free then
+		self:debug("Couldn't start. Something is blocking")
+		return
+	end
+
+	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self._updateInterval)
 	self._running = true
 	self:SendMessage("OnStart", self._updateInterval)
 
-	if initial then
+	if isInitial then
 		self:OnUpdate()
-		print("Addon started!")
 	end
 end
 
-function Core:Stop(initial)
-	dprint(DEBUG_SEVERITY.INFO, "Stopping")
+function Core:Stop(isInitial)
+	self:debug("Stopping")
 	if not self._started then
-		print("AutoTrackSwitcher not started!")
+		Utils.string.printf("AutoTrackSwitcher not started!")
 		return
 	end
 
@@ -352,8 +320,8 @@ function Core:Stop(initial)
 	self._running = false
 	self:SendMessage("OnStop")
 
-	if initial then
-		print("AutoTrackSwitcher stopped!")
+	if isInitial then
+		Utils.string.printf("AutoTrackSwitcher stopped!")
 		self._started = false
 	end
 end
@@ -368,10 +336,10 @@ end
 
 function Core:SetInterval(interval, skipRestart)
 	if interval < 2 then
-		dprint(DEBUG_SEVERITY.INFO, "Interval can not be lower than 2 seconds")
+		self:debug("Interval can not be lower than 2 seconds")
 		interval = 2
 	elseif interval > 60 then
-		dprint(DEBUG_SEVERITY.INFO, "Interval can not be higher than 60 seconds")
+		self:debug("Interval can not be higher than 60 seconds")
 		interval = 60
 	elseif interval == 2 then
 		interval = 2.001 -- Blizzard's Cooldown frame limits the text to >2 seconds. This hack shows it without any noticable delay for the user
@@ -380,7 +348,7 @@ function Core:SetInterval(interval, skipRestart)
 	self._updateInterval = interval
 
 	if self._started and not skipRestart then
-		dprint(DEBUG_SEVERITY.INFO, "Restarting timer")
+		self:debug("Restarting timer")
 		self:Stop()
 		self:Start()
 	end
@@ -388,92 +356,175 @@ end
 
 
 function Core:OnPlayerEnteringWorld(event, isInitialLogin, isReloadingUi)
-	dprint(DEBUG_SEVERITY.INFO, "OnPlayerEnteringWorld: %q, %q", tostring(isInitialLogin), tostring(isReloadingUi))
+	self:debug("OnPlayerEnteringWorld: %q, %q", tostring(isInitialLogin), tostring(isReloadingUi))
 	self:Initialize()
 end
 
 function Core:OnSkillLinesChanged()
-	dprint(DEBUG_SEVERITY.INFO, "Skill list changed. Fetching data anew")
+	self:debug("Skill list changed. Fetching data anew")
 	self:UpdateTrackingData()
 	self:OnConfigChange()
 end
 
 function Core:OnLearnedSpellInTab()
-	dprint(DEBUG_SEVERITY.INFO, "New spell learned. Fetching data anew")
+	self:debug("New spell learned. Fetching data anew")
 	self:UpdateTrackingData()
 	self:OnConfigChange()
 end
 
-function Core:OnItemLocked()
+function Core:OnItemLocked(eventName, bagIndex, slotIndex)
+	bAdd(self, ItemLocked, "ItemLocked")
+	self._bagIndex = bagIndex
+	self._slotIndex = slotIndex
+
 	if self._started then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Paused due to: Item locked"))
+		self:debug("Paused due to: Item locked")
 		self:Stop()
 	end
 end
 
-function Core:OnItemUnlocked()
+function Core:OnItemUnlocked(eventName, bagIndex, slotIndex)
+	bRemove(self, ItemLocked, "ItemLocked")
+
+	self._bagIndex = nil
+	self._slotIndex = nil
+
 	if self._started then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Resumed due to: Item unlocked"))
+		self:debug("Resumed due to: Item unlocked")
+		self:Start()
+	end
+end
+
+function Core:OnBagUpdate(eventName, bagIndex)
+	-- ITEM_UNLOCKED is not called when a item is deleted from the inventory.
+	-- So we need to check on bag update if the item slot is empty and release then
+
+	if bagIndex ~= self._bagIndex then
+		return
+	end
+
+	local info = GetContainerItemInfo(bagIndex, self._slotIndex)
+	if info then
+		return
+	end
+
+	bRemove(self, ItemLocked, "ItemLocked")
+
+	self._bagIndex = nil
+	self._slotIndex = nil
+
+	if self._started then
+		self:debug("Resumed due to: Item unlocked (bag update)")
 		self:Start()
 	end
 end
 
 function Core:OnLootOpened(autoLoot)
-	if self._started and not autoLoot then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Paused due to: Loot Window opened"))
-		self:Stop()
+	bAdd(self, LootOpened, "LootOpened")
+
+	if not autoLoot then
+		if self._started then
+			self:debug("Paused due to: Loot Window opened")
+			self:Stop()
+		end
+	elseif self._started then
+		local total = 0
+		for i = 0, 4 do
+			total = total + GetContainerNumFreeSlots(i)
+		end
+		if total == 0 then
+			self:debug("Paused due to: Loot Window opened (inventory full)")
+			self:Stop()
+		end
 	end
 end
 
 function Core:OnLootClosed()
+	bRemove(self, LootOpened, "LootOpened")
+
 	if self._started then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Resumed due to: Loot Window closed"))
+		self:debug("Resumed due to: Loot Window closed")
 		self:Start()
 	end
 end
 
 function Core:OnZoneChanged()
-	if not self._started then
-		return
-	end
-
 	local _, instanceType = GetInstanceInfo()
 	local currentArea = instanceType == "none" and "world" or instanceType
 
 	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player"))
-	if shouldStop and self._running then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Paused due to: In Disabled Area"))
-		self:Stop()
-	elseif not self._running then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Resumed due to: Not in Disabled Area"))
-		self:Start()
+	if shouldStop then
+		bAdd(self, ZoneChanged, "ZoneChanged")
+		if self._started and self._running then
+			self:debug("Paused due to: In Disabled Area")
+			self:Stop()
+		end
+	else
+		bRemove(self, ZoneChanged, "ZoneChanged")
+		if self._started and not self._running then
+			self:debug("Resumed due to: Not in Disabled Area")
+			self:Start()
+		end
 	end
 end
 
 function Core:OnPlayerEnterCombat()
-	if self._started and self._disableInCombatFunc("player") then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Paused due to: In Combat"))
-		self:Stop()
+	if self._disableInCombatFunc("player") then
+		bAdd(self, PlayerCombat, "PlayerCombat")
+		if self._started then
+			self:debug("Paused due to: In Combat")
+			self:Stop()
+		end
 	end
 end
 
 function Core:OnPlayerLeaveCombat()
-	if self._started and self._disableInCombatFunc("player") then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Resumed due to: No longer In Combat"))
+	bRemove(self, PlayerCombat, "PlayerCombat")
+
+	if self._started then
+		self:debug("Resumed due to: No longer In Combat")
 		self:Start()
 	end
 end
 
 function Core:OnPlayerDead()
+	bAdd(self, PlayerDead, "PlayerDead")
+
 	if self._started then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Paused due to: Dead"))
+		self:debug("Paused due to: Dead")
 		self:Stop()
 	end
 end
 
 function Core:OnPlayerUnGhost()
+	bRemove(self, PlayerDead, "PlayerDead")
+
 	if self._started then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Resumed due to: No longer Dead"))
+		self:debug("Resumed due to: No longer Dead")
+		self:Start()
+	end
+end
+
+function Core:OnSpellcastStart(event, unit)
+	if unit ~= "player" then
+		return
+	end
+
+	bAdd(self, PlayerCasting, "PlayerCasting")
+	if self._started then
+		self:debug("Paused due to: Casting Spell")
+		self:Stop()
+	end
+end
+
+function Core:OnSpellcastStop(event, unit)
+	if unit ~= "player" then
+		return
+	end
+
+	bRemove(self, PlayerCasting, "PlayerCasting")
+	if self._started then
+		self:debug("Resumed due to: No longer casting spell")
 		self:Start()
 	end
 end
@@ -482,12 +533,23 @@ end
 function Core:OnConfigChange(...)
 	self:SetActiveTracking()
 	self:SetUpdateConditions()
+	self:OnZoneChanged()
+	
+	if UnitAffectingCombat("player") then
+		self:OnPlayerEnterCombat()
+	else
+		self:OnPlayerLeaveCombat()
+	end
 
 	local db = AutoTrackSwitcher.Db
 	self:SetInterval(db:GetProfileData("tracking", "interval"), true)
 
 	if self._started then
 		self:Stop()
+
+		if #self._trackedSpellIds > 0 then
+			self:Start()
+		end
 	end
 end
 
@@ -499,18 +561,12 @@ function Core:OnUpdate()
 	local trackingData = self._trackingData[spellId]
 
 	if isTracking(trackingData) then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Already tracking"))
-		return
-	end
-
-	local spell = UnitCastingInfo("player")
-	if spell then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Casting Spell"))
+		self:debug("Already tracking")
 		return
 	end
 
 	if self._disableWhileFallingFunc("player") then
-		dprint(DEBUG_SEVERITY.INFO, stringformat("Disable due to: Falling"))
+		self:debug("Disable due to: Falling")
 		return
 	end
 
