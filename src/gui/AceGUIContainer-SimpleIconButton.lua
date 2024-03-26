@@ -249,6 +249,10 @@ function AceContainerSimpleIconButton:SetTooltip(text)
 	end
 end
 
+function AceContainerSimpleIconButton:SetDesaturated(desaturated)
+	self.texture:SetDesaturated(desaturated)
+end
+
 -- Constructor --
 local function Constructor()
 	local self = {}

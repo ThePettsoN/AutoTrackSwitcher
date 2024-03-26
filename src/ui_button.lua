@@ -65,11 +65,24 @@ end
 
 function UiButton:UpdateVisibility()
     local conditions = self._db:GetProfileData("ui", "button", "conditions")
-    if not conditions.show_while_stopped and not self._running then
-        self.iconButton:Hide()
-    elseif conditions.show then
-        self.iconButton:Show()
+
+    if conditions.show then
+        if self._running then
+            -- Show while running
+            self.iconButton:Show()
+            self.iconButton:SetDesaturated(false)
+        else
+            if conditions.show_while_stopped then
+                -- Show while stopped
+                self.iconButton:Show()
+                self.iconButton:SetDesaturated(true)
+            else
+                -- Do not show while stopped
+                self.iconButton:Hide()
+            end
+        end
     else
+        -- Do not show
         self.iconButton:Hide()
     end
 end
