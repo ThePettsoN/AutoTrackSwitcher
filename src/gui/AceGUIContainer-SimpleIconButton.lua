@@ -251,7 +251,9 @@ end
 
 -- Constructor --
 local function Constructor()
-	local self = AceContainerSimpleIconButton
+	local self = {}
+	Utils.table.mergeRecursive(self, AceContainerSimpleIconButton)
+
 	local width, height = 64, 64
 
 	local frame = CreateFrame("Frame", Type, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
