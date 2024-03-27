@@ -40,6 +40,8 @@ local DEFAULTS = {
 		},
 		tracking = {
 			interval = 2.001,
+			enable_interval_per_tracking_type = false,
+			individual = {},
 		},
 		minimap = {
 			hide = false,

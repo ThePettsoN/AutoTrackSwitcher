@@ -2,13 +2,45 @@ local _, AutoTrackSwitcher = ...
 
 local options = AutoTrackSwitcher.Options
 
+local function intervalPerTypeGroup(group, db)
+    local order = 1
+    local availableTrackingSpells = AutoTrackSwitcher.Core._trackingData
+    for spelldId, data in pairs(availableTrackingSpells) do
+        local key = tostring(spelldId)
+        local value = db:GetProfileData("tracking", "individual", key)
+        if not value then
+            db:SetProfileData(key, 2.001, "tracking", "individual")
+            value = 2.001
+        end
+
+        group[key] = {
+            name = data.name,
+            type = "range",
+            width = "full",
+            min = 2,
+            max = 60,
+            step = 1,
+            order = order,
+            get = function(info)
+                return value
+            end,
+            set = function(info, newValue)
+                options:SetSetting("SetProfileData", key, newValue, "tracking", "individual")
+            end
+        }
+        order = order + 1
+    end
+
+    return group
+end
+
 local function generalsGroup(order, db)
     local availableTrackingSpells = AutoTrackSwitcher.Core._trackingData
     local trackingSpellLoc = {}
     for spelldId, data in pairs(availableTrackingSpells) do
         trackingSpellLoc[spelldId] = data.name
     end
-    
+
     return {
         type = "group",
         name = "General",
@@ -29,19 +61,45 @@ local function generalsGroup(order, db)
                 end,
             },
             interval = {
-                name = "How often AutoTrackSwitcher should switch between each tracking skill",
+                name = "Duration before switching tracking skill",
+                desc = "How often AutoTrackSwitcher should switch between each tracking skill",
                 type = "range",
                 width = "full",
                 min = 2,
                 max = 60,
                 step = 1,
+                order = 2,
+                disabled = db:GetProfileData("tracking", "enable_interval_per_tracking_type"),
                 get = function(info)
                     return db:GetProfileData("tracking", "interval")
                 end,
                 set = function(info, newValue)
                     options:SetSetting("SetProfileData", "interval", newValue, "tracking")
                 end
-            }
+            },
+
+            enable_interval_per_tracking_type = {
+                type = "toggle",
+                width = "full",
+                order = 3,
+                name = "Enable timers per tracking type",
+                desc = "",
+                get = function(info)
+                    return db:GetProfileData("tracking", "enable_interval_per_tracking_type")
+                end,
+                set = function(info, newValue)
+                    options:SetSetting("SetProfileData", "enable_interval_per_tracking_type", newValue, "tracking")
+                end,
+            },
+
+            interval_per_tracking_type = {
+                name = "Conditions",
+                order = 4,
+                disabled = not db:GetProfileData("tracking", "enable_interval_per_tracking_type"),
+                type = "group",
+                inline = true,
+                args = intervalPerTypeGroup({}, db)
+            },
         },
     }
 end

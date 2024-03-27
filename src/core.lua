@@ -160,7 +160,6 @@ function Core:InitializeTrackingData()
 	self:UpdateTrackingData()
 
 	local db = AutoTrackSwitcher.Db
-	self._updateInterval = db:GetProfileData("tracking", "interval")
 
 	if db:GetCharacterData("first_time") then
 		self:debug("First Time")
@@ -266,6 +265,16 @@ function Core:SetActiveTracking()
 	end
 end
 
+function Core:GetTimer(index)
+	if self._intervalPerTrackingType then
+		local nextIndex = (self._currentUpdateIndex % #self._trackedSpellIds) + 1
+		local spellId = self._trackedSpellIds[nextIndex]
+		return self._individualTrackingTimers[tostring(spellId)]
+	else
+		return self._updateInterval
+	end
+end
+
 function Core:Start(isInitial)
 	self:debug("Starting")
 	if isInitial and self._running then
@@ -292,9 +301,10 @@ function Core:Start(isInitial)
 		return
 	end
 
-	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self._updateInterval)
+	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self:GetTimer())
+
 	self._running = true
-	self:SendMessage("OnStart", self._updateInterval)
+	self:SendMessage("OnStart", interval)
 
 	if isInitial then
 		self:OnUpdate()
@@ -334,18 +344,16 @@ function Core:IsStarted()
 	return self._started
 end
 
-function Core:SetInterval(interval, skipRestart)
-	if interval < 2 then
-		self:debug("Interval can not be lower than 2 seconds")
-		interval = 2
-	elseif interval > 60 then
-		self:debug("Interval can not be higher than 60 seconds")
-		interval = 60
-	elseif interval == 2 then
-		interval = 2.001 -- Blizzard's Cooldown frame limits the text to >2 seconds. This hack shows it without any noticable delay for the user
-	end
+function Core:SetInterval(tracking, skipRestart)
+	local interval = math.min(math.max(tracking.interval, 2.01), 60)
 
-	self._updateInterval = interval
+	self._updateInterval = tracking.interval
+	self._intervalPerTrackingType = tracking.enable_interval_per_tracking_type
+
+	self._individualTrackingTimers = Utils.table.clone(tracking.individual, self._individualTrackingTimers or {})
+	for k, v in pairs(self._individualTrackingTimers) do
+		self._individualTrackingTimers[k] = math.min(math.max(v, 2.01), 60)
+	end
 
 	if self._started and not skipRestart then
 		self:debug("Restarting timer")
@@ -353,7 +361,6 @@ function Core:SetInterval(interval, skipRestart)
 		self:Start()
 	end
 end
-
 
 function Core:OnPlayerEnteringWorld(event, isInitialLogin, isReloadingUi)
 	self:debug("OnPlayerEnteringWorld: %q, %q", tostring(isInitialLogin), tostring(isReloadingUi))
@@ -542,7 +549,7 @@ function Core:OnConfigChange(...)
 	end
 
 	local db = AutoTrackSwitcher.Db
-	self:SetInterval(db:GetProfileData("tracking", "interval"), true)
+	self:SetInterval(db:GetProfileData("tracking"), true)
 
 	if self._started then
 		self:Stop()
@@ -554,7 +561,7 @@ function Core:OnConfigChange(...)
 end
 
 function Core:OnUpdate()
-	self:SendMessage("OnUpdate", self._updateInterval)
+	self:SendMessage("OnUpdate", self:GetTimer())
 
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._trackedSpellIds) + 1
 	local spellId = self._trackedSpellIds[self._currentUpdateIndex]
