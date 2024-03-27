@@ -11,14 +11,42 @@ local ENUM_DISABLE_IN_COMBAT = {
 AutoTrackSwitcher.Const.ENUM_DISABLE_IN_COMBAT = ENUM_DISABLE_IN_COMBAT
 
 local DEFAULTS = {
-    profile = {
-        tracking = {
-            interval = 2,
-        },
-        minimap = {
-            hide = false,
-            lock = false,
-        },
+	profile = {
+		ui = {
+			button = {
+				font = {
+					path = "Fonts\\FRIZQT__.TTF",
+					size = 32,
+					flags = "",
+				},
+				position  = {
+					x = 0,
+					y = 0,
+					stored = false
+				},
+				size = {
+					width = 64,
+					height = 64,
+				},
+				cosmetics = {
+					swipe = true,
+					show_text = true,
+				},
+				conditions = {
+					show = true,
+					show_while_stopped = true
+				}
+			},
+		},
+		tracking = {
+			interval = 2.001,
+			enable_interval_per_tracking_type = false,
+			individual = {},
+		},
+		minimap = {
+			hide = false,
+			lock = false,
+		},
 		conditions = {
 			disable_in_combat = ENUM_DISABLE_IN_COMBAT.UNMOUNTED,
 			disable_in_areas = {
@@ -29,11 +57,10 @@ local DEFAULTS = {
 				pvp = true,
 				city = true,
 			},
-			disable_while_falling = true,
-			disable_while_dead = true,
+			disable_while_falling = true
 		}
-    },
-    char = {
+	},
+	char = {
 		tracking = {
 			enabled_spell_ids = {},
 		},
@@ -42,7 +69,7 @@ local DEFAULTS = {
 }
 
 function Db:OnInitialize()
-    self._db = LibStub("AceDB-3.0"):New("AutoTrackSwitcherDB", DEFAULTS)
+	self._db = LibStub("AceDB-3.0"):New("AutoTrackSwitcherDB", DEFAULTS)
 	self._db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")
 	self._db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")
 end

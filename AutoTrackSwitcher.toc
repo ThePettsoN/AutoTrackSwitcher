@@ -1,5 +1,5 @@
-## Interface: 11500
-## Interface-Classic: 11500
+## Interface: 11501
+## Interface-Classic: 11501
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30403
 ## Title: AutoTrackSwitcher
@@ -12,11 +12,14 @@
 ## X-Wago-ID: RaN0Al6j
 
 embeds.xml
+src/gui/AceGUIContainer-SimpleIconButton.lua
 
 src/core.lua
 src/db.lua
 src/commands.lua
 src/minimap_button.lua
+src/ui_button.lua
 
 src/options/main.lua
 src/options/templates/general.lua
+src/options/templates/ui.lua
