@@ -139,7 +139,19 @@ local function optionsTemplate()
         },
         buttonConditions = buttonGeneralGroup(2, db),
         buttonText = buttonTextGroup(3, db),
-        buttonSize = buttonSizeGroup(4, db)
+        buttonSize = buttonSizeGroup(4, db),
+        reset_button_position = {
+            name = "Reset button position",
+            order = 5,
+            type = "execute",
+            width = "full",
+            func = function(...)
+                local x = GetScreenWidth() / 2
+                local y = GetScreenHeight() / 2
+                options:SetSetting("SetProfileData", "x", x, "ui", "button", "position")
+                options:SetSetting("SetProfileData", "y", y, "ui", "button", "position")
+            end,
+        }
     }
     
     return {
