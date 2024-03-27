@@ -208,24 +208,34 @@ function Core:UpdateTrackingData()
 	wipe(self._trackingData)
 
 	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
-		-- Hardcoded for now. Should probably refactor at some point
-		if IsSpellKnown(2580) then -- Mining
-			local name = GetSpellInfo(2580)
-			self._trackingData[2580] = {
-				name = name,
-				index = 2580,
-				isNested = false,
-				texture = 136025
-			}
-		end
-		if IsSpellKnown(2383) then -- Herb
-			local name = GetSpellInfo(2383)
-			self._trackingData[2383] = {
-				name = name,
-				index = 2383,
-				isNested = false,
-				texture = 133939,
-			}
+		local spells = {
+			2580, -- Find Minerals
+			2383, -- Find Herbs
+			2481, -- Find Treasure
+			5500, -- Sense Demons
+			5502, -- Sense Undead
+			1494, -- Track Beasts
+			19878, -- Track Demons
+			19879, -- Track Dragonkin
+			19880, -- Track Elementals
+			19882, -- Track Giants
+			19885, -- Track Hidden
+			19883, -- Track Humanoids (Hunter)
+			5225, -- Track Humanoids (Druid)
+			19884 -- Track Undead
+		}
+
+		for i = 1, #spells do
+			local id = spells[i]
+			if IsSpellKnown(id) then -- Mining
+				local name, _, texture = GetSpellInfo(id)
+				self._trackingData[id] = {
+					name = name,
+					index = id,
+					isNested = false,
+					texture = texture
+				}
+			end
 		end
 
 		return
