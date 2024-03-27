@@ -59,8 +59,8 @@ local DEFAULTS = {
 			},
 			disable_while_falling = true
 		}
-    },
-    char = {
+	},
+	char = {
 		tracking = {
 			enabled_spell_ids = {},
 		},
@@ -69,7 +69,7 @@ local DEFAULTS = {
 }
 
 function Db:OnInitialize()
-    self._db = LibStub("AceDB-3.0"):New("AutoTrackSwitcherDB", DEFAULTS)
+	self._db = LibStub("AceDB-3.0"):New("AutoTrackSwitcherDB", DEFAULTS)
 	self._db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")
 	self._db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")
 end
