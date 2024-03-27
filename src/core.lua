@@ -466,7 +466,7 @@ function Core:OnZoneChanged()
 	local _, instanceType = GetInstanceInfo()
 	local currentArea = instanceType == "none" and "world" or instanceType
 
-	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player"))
+	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player") and currentArea == "city")
 	if shouldStop then
 		bAdd(self, ZoneChanged, "ZoneChanged")
 		if self._started and self._running then
