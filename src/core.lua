@@ -144,6 +144,9 @@ function Core:OnEnable()
 	self:RegisterEvent("UNIT_SPELLCAST_STOP", "OnSpellcastStop")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
+
+	local db = AutoTrackSwitcher.Db
+	self:SetInterval(db:GetProfileData("tracking"), true)
 end
 
 function Core:RegisterModule(name, module, ...)
@@ -265,11 +268,12 @@ function Core:SetActiveTracking()
 	end
 end
 
-function Core:GetTimer(index)
+function Core:GetTimer()
 	if self._intervalPerTrackingType then
 		local nextIndex = (self._currentUpdateIndex % #self._trackedSpellIds) + 1
 		local spellId = self._trackedSpellIds[nextIndex]
-		return self._individualTrackingTimers[tostring(spellId)]
+		local interval = self._individualTrackingTimers[tostring(spellId)]
+		return interval
 	else
 		return self._updateInterval
 	end
@@ -301,7 +305,10 @@ function Core:Start(isInitial)
 		return
 	end
 
-	self._timer = self:ScheduleRepeatingTimer("OnUpdate", self:GetTimer())
+	local interval = self:GetTimer()
+	if not self._intervalPerTrackingType then
+		self._timer = self:ScheduleRepeatingTimer("OnUpdate", interval)
+	end
 
 	self._running = true
 	self:SendMessage("OnStart", interval)
@@ -347,7 +354,7 @@ end
 function Core:SetInterval(tracking, skipRestart)
 	local interval = math.min(math.max(tracking.interval, 2.01), 60)
 
-	self._updateInterval = tracking.interval
+	self._updateInterval = interval
 	self._intervalPerTrackingType = tracking.enable_interval_per_tracking_type
 
 	self._individualTrackingTimers = Utils.table.clone(tracking.individual, self._individualTrackingTimers or {})
@@ -561,11 +568,16 @@ function Core:OnConfigChange(...)
 end
 
 function Core:OnUpdate()
-	self:SendMessage("OnUpdate", self:GetTimer())
+	local interval = self:GetTimer()
+	self:SendMessage("OnUpdate", interval)
 
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._trackedSpellIds) + 1
 	local spellId = self._trackedSpellIds[self._currentUpdateIndex]
 	local trackingData = self._trackingData[spellId]
+
+	if self._intervalPerTrackingType then
+		self._timer = self:ScheduleTimer("OnUpdate", interval)
+	end
 
 	if isTracking(trackingData) then
 		self:debug("Already tracking")
