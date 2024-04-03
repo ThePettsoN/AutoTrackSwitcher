@@ -1,7 +1,7 @@
 local _, AutoTrackSwitcher = ...
 local Core = LibStub("AceAddon-3.0"):NewAddon("AutoTrackSwitcherCore", "AceEvent-3.0", "AceTimer-3.0")
 AutoTrackSwitcher.Core = Core
-local Utils = LibStub:GetLibrary("PUtils-1.2")
+local Utils = LibStub:GetLibrary("PUtils-1.3")
 
 AutoTrackSwitcher.Utils = Utils
 AutoTrackSwitcher.Const = {}
