@@ -67,17 +67,17 @@ local function conditionUnmountedCombatFunc(...)
 		end
 
 		local _, _, classId = UnitClass("player")
-		if classId == Utils.game.Druid then
+		if classId == Utils.game.ClassIds.Druid then
 			local druidShapeshiftFormIds = Utils.game.ShapeshiftIds.Druid
 
 			local shapeshiftFormId = GetShapeshiftForm()
-			if shapeshiftFormId == druidShapeshiftFormIds.AQUATIC_FORM or
-			shapeshiftFormId == druidShapeshiftFormIds.TRAVEL_FORM or
-			(IsSpellKnown(24858) and shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM_BALANCE) or
-			shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM then
+			if shapeshiftFormId == druidShapeshiftFormIds.AquaticForm or
+			shapeshiftFormId == druidShapeshiftFormIds.TravelForm or
+			(IsSpellKnown(24858) and shapeshiftFormId == druidShapeshiftFormIds.FlightFormBalance) or
+			shapeshiftFormId == druidShapeshiftFormIds.FlightForm then
 				return false
 			end
-		elseif classId == Utils.game.Shaman then
+		elseif classId == Utils.game.ClassIds.Shaman then
 			local shapeshiftForm = GetShapeshiftForm()
 			if shapeshiftForm == Utils.game.ShapeshiftIds.Shaman.GhostWolf then -- If shaman and in ghost wolf
 				return false
