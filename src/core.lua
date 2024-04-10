@@ -95,6 +95,7 @@ local ZoneChanged = bit.lshift(Free, 3)
 local PlayerCombat = bit.lshift(Free, 4)
 local PlayerDead = bit.lshift(Free, 5)
 local PlayerCasting = bit.lshift(Free, 6)
+local PlayerFalling = bit.lshift(Free, 7)
 
 local _bit = Free
 
@@ -110,12 +111,17 @@ local function bRemove(self, mask, name)
 	self:debug("(R) New bit %s", tostring(_bit))
 end
 
+local function bAnd(mask)
+	return bit.band(_bit, mask) == mask
+end
+
 function Core:OnInitialize()
 	Utils.debug.initialize(self, "ATS Core")
 	-- self:setSeverity("Debug")
 
 	self._currentUpdateIndex = 0
 	self._timer = nil
+	self._updateTimer = nil
 
 	self._started = false -- Tracks if addon is started. Does not mean that the timer is nessearily running
 	self._running = false
@@ -198,8 +204,7 @@ function Core:SetUpdateConditions()
 	end
 
 	self._disableForAreas = conditions.disable_in_areas
-
-	self._disableWhileFallingFunc = conditions.disable_while_falling and IsFalling or falseFunc
+	self._checkDisableWhileFalling = conditions.disable_while_falling
 end
 
 
@@ -305,6 +310,10 @@ function Core:Start(isInitial)
 		self:CancelTimer(self._timer)
 	end
 
+	if self._updateTimer then -- Failsafe. Should never happen that we can start while a timer is already running, but just in case
+		self:CancelTimer(self._updateTimer)
+	end
+
 	self._started = true
 	if isInitial then
 		Utils.string.printf("AutoTrackSwitcher started!")
@@ -317,14 +326,16 @@ function Core:Start(isInitial)
 
 	local interval = self:GetTimer()
 	if not self._intervalPerTrackingType then
-		self._timer = self:ScheduleRepeatingTimer("OnUpdate", interval)
+		self._timer = self:ScheduleRepeatingTimer("OnDoLogic", interval)
 	end
+
+	self._updateTimer = self:ScheduleRepeatingTimer("OnUpdate", 1)
 
 	self._running = true
 	self:SendMessage("OnStart", interval)
 
 	if isInitial then
-		self:OnUpdate()
+		self:OnDoLogic()
 	end
 end
 
@@ -342,6 +353,11 @@ function Core:Stop(isInitial)
 	if self._timer then
 		self:CancelTimer(self._timer)
 		self._timer = nil
+	end
+
+	if self._updateTimer then
+		self:CancelTimer(self._updateTimer)
+		self._updateTimer = nil
 	end
 
 	self._running = false
@@ -577,25 +593,41 @@ function Core:OnConfigChange(...)
 	end
 end
 
+function Core:CheckIsFalling()
+	if IsFalling() then -- Is falling
+		if bAnd(PlayerFalling) then -- Already marked as falling
+			return
+		end
+
+		return bAdd(self, PlayerFalling, "PlayerFalling")
+	end
+
+	-- Not falling
+	if bAnd(PlayerFalling) then -- Marked as falling
+		bRemove(self, PlayerFalling, "PlayerFalling")
+	end
+end
+
 function Core:OnUpdate()
+	if self._checkDisableWhileFalling then
+		self:CheckIsFalling()
+	end
+end
+
+function Core:OnDoLogic()
 	local interval = self:GetTimer()
-	self:SendMessage("OnUpdate", interval)
+	self:SendMessage("OnDoLogic", interval)
 
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._trackedSpellIds) + 1
 	local spellId = self._trackedSpellIds[self._currentUpdateIndex]
 	local trackingData = self._trackingData[spellId]
 
 	if self._intervalPerTrackingType then
-		self._timer = self:ScheduleTimer("OnUpdate", interval)
+		self._timer = self:ScheduleTimer("OnDoLogic", interval)
 	end
 
 	if isTracking(trackingData) then
 		self:debug("Already tracking")
-		return
-	end
-
-	if self._disableWhileFallingFunc("player") then
-		self:debug("Disable due to: Falling")
 		return
 	end
 
