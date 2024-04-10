@@ -365,6 +365,8 @@ function Core:Stop(isInitial)
 		self._updateTimer = nil
 	end
 
+	bRemove(self, PlayerFalling, "PlayerFalling")
+
 	self._running = false
 	self:SendMessage("OnStop")
 
