@@ -96,6 +96,7 @@ local PlayerCombat = bit.lshift(Free, 4)
 local PlayerDead = bit.lshift(Free, 5)
 local PlayerCasting = bit.lshift(Free, 6)
 local PlayerFalling = bit.lshift(Free, 7)
+local TalkingWithNPC = bit.lshift(Free, 8)
 
 local _bit = Free
 
@@ -117,7 +118,7 @@ end
 
 function Core:OnInitialize()
 	Utils.debug.initialize(self, "ATS Core")
-	-- self:setSeverity("Debug")
+	self:setSeverity("Debug")
 
 	self._currentUpdateIndex = 0
 	self._timer = nil
@@ -148,6 +149,10 @@ function Core:OnEnable()
 	self:RegisterEvent("PLAYER_UNGHOST", "OnPlayerUnGhost")
 	self:RegisterEvent("UNIT_SPELLCAST_START", "OnSpellcastStart")
 	self:RegisterEvent("UNIT_SPELLCAST_STOP", "OnSpellcastStop")
+	self:RegisterEvent("GOSSIP_SHOW", "OnStartTalkWithNPC")
+	self:RegisterEvent("GOSSIP_CLOSED", "OnStopTalkWithNPC")
+	self:RegisterEvent("MERCHANT_SHOW", "OnStartTalkWithNPC")
+	self:RegisterEvent("MERCHANT_CLOSED", "OnStopTalkWithNPC")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 
@@ -569,6 +574,21 @@ function Core:OnSpellcastStop(event, unit)
 	end
 end
 
+function Core:OnStartTalkWithNPC(event)
+	bAdd(self, TalkingWithNPC, "TalkingWithNPC")
+	if self._started then
+		self:debug("Paused due to: Talking With NPC")
+		self:Stop()
+	end
+end
+
+function Core:OnStopTalkWithNPC(event)
+	bRemove(self, TalkingWithNPC, "TalkingWithNPC")
+	if self._started then
+		self:debug("Resumed due to: Talking With NPC")
+		self:Start()
+	end
+end
 
 function Core:OnConfigChange(...)
 	self:SetActiveTracking()
