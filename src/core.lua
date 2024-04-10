@@ -89,32 +89,14 @@ local function conditionUnmountedCombatFunc(...)
 end
 
 local Free = 1
-local ItemLocked = bit.lshift(Free, 1)
-local LootOpened = bit.lshift(Free, 2)
-local ZoneChanged = bit.lshift(Free, 3)
-local PlayerCombat = bit.lshift(Free, 4)
-local PlayerDead = bit.lshift(Free, 5)
-local PlayerCasting = bit.lshift(Free, 6)
-local PlayerFalling = bit.lshift(Free, 7)
-local TalkingWithNPC = bit.lshift(Free, 8)
-
-local _bit = Free
-
-local function bAdd(self, mask, name)
-	self:debug("Adding %s to %s (%s)", tostring(mask), tostring(_bit), name)
-	_bit = bit.bor(_bit, mask)
-	self:debug("(A) New bit %s", tostring(_bit))
-end
-
-local function bRemove(self, mask, name)
-	self:debug("Removing %s from %s (%s)", tostring(mask), tostring(_bit), name)
-	_bit = bit.band(_bit, bit.bnot(mask))
-	self:debug("(R) New bit %s", tostring(_bit))
-end
-
-local function bAnd(mask)
-	return bit.band(_bit, mask) == mask
-end
+local ItemLocked = bit.lshift(Free, 1) --		2
+local LootOpened = bit.lshift(Free, 2) --		4
+local ZoneChanged = bit.lshift(Free, 3) --		8
+local PlayerCombat = bit.lshift(Free, 4) --		16
+local PlayerDead = bit.lshift(Free, 5) --		32
+local PlayerCasting = bit.lshift(Free, 6) --	64
+local PlayerFalling = bit.lshift(Free, 7) --	128
+local TalkingWithNPC = bit.lshift(Free, 8) --	256
 
 function Core:OnInitialize()
 	Utils.debug.initialize(self, "ATS Core")
@@ -130,7 +112,7 @@ function Core:OnInitialize()
 	self._trackingData = {}
 	self._trackedSpellIds = {}
 	
-	self._bit = 0
+	self._bit = Free
 end
 
 function Core:OnEnable()
@@ -212,6 +194,32 @@ function Core:SetUpdateConditions()
 	self._checkDisableWhileFalling = conditions.disable_while_falling
 end
 
+-- TODO: Move to PUtils
+function Core:bitAdd(mask, name, ignoreStopping)
+	self:debug("Adding %s to %s (%s)", tostring(mask), tostring(self._bit), name)
+	self._bit = bit.bor(self._bit, mask)
+	self:debug("(A) New bit %s", tostring(self._bit))
+
+	if not ignoreStopping and self._started then
+		self:debug("Paused due to: %s", name)
+		self:Stop()
+	end
+end
+
+function Core:bitRemove(mask, name)
+	self:debug("Removing %s from %s (%s)", tostring(mask), tostring(self._bit), name)
+	self._bit = bit.band(self._bit, bit.bnot(mask))
+	self:debug("(R) New bit %s", tostring(self._bit))
+
+	if self._started then
+		self:debug("Resumed due to: %s", name)
+		self:Start()
+	end
+end
+
+function Core:bitCheck(mask)
+	return bit.band(self._bit, mask) == mask
+end
 
 
 function Core:UpdateTrackingData()
@@ -324,7 +332,7 @@ function Core:Start(isInitial)
 		Utils.string.printf("AutoTrackSwitcher started!")
 	end
 
-	if _bit ~= Free then
+	if self._bit ~= Free then
 		self:debug("Couldn't start. Something is blocking")
 		return
 	end
@@ -365,7 +373,7 @@ function Core:Stop(isInitial)
 		self._updateTimer = nil
 	end
 
-	bRemove(self, PlayerFalling, "PlayerFalling")
+	self:bitRemove(PlayerFalling, "PlayerFalling")
 
 	self._running = false
 	self:SendMessage("OnStop")
@@ -420,26 +428,16 @@ function Core:OnLearnedSpellInTab()
 end
 
 function Core:OnItemLocked(eventName, bagIndex, slotIndex)
-	bAdd(self, ItemLocked, "ItemLocked")
+	self:bitAdd(ItemLocked, "ItemLocked")
 	self._bagIndex = bagIndex
 	self._slotIndex = slotIndex
-
-	if self._started then
-		self:debug("Paused due to: Item locked")
-		self:Stop()
-	end
 end
 
 function Core:OnItemUnlocked(eventName, bagIndex, slotIndex)
-	bRemove(self, ItemLocked, "ItemLocked")
+	self:bitRemove(ItemLocked, "ItemLocked")
 
 	self._bagIndex = nil
 	self._slotIndex = nil
-
-	if self._started then
-		self:debug("Resumed due to: Item unlocked")
-		self:Start()
-	end
 end
 
 function Core:OnBagUpdate(eventName, bagIndex)
@@ -455,19 +453,14 @@ function Core:OnBagUpdate(eventName, bagIndex)
 		return
 	end
 
-	bRemove(self, ItemLocked, "ItemLocked")
+	self:bitRemove(ItemLocked, "ItemLocked")
 
 	self._bagIndex = nil
 	self._slotIndex = nil
-
-	if self._started then
-		self:debug("Resumed due to: Item unlocked (bag update)")
-		self:Start()
-	end
 end
 
 function Core:OnLootOpened(autoLoot)
-	bAdd(self, LootOpened, "LootOpened")
+	self:bitAdd(LootOpened, "LootOpened", true)
 
 	if not autoLoot then
 		if self._started then
@@ -487,12 +480,7 @@ function Core:OnLootOpened(autoLoot)
 end
 
 function Core:OnLootClosed()
-	bRemove(self, LootOpened, "LootOpened")
-
-	if self._started then
-		self:debug("Resumed due to: Loot Window closed")
-		self:Start()
-	end
+	self:bitRemove(LootOpened, "LootOpened")
 end
 
 function Core:OnZoneChanged()
@@ -501,13 +489,13 @@ function Core:OnZoneChanged()
 
 	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player") and currentArea == "city")
 	if shouldStop then
-		bAdd(self, ZoneChanged, "ZoneChanged")
+		self:bitAdd(ZoneChanged, "ZoneChanged")
 		if self._started and self._running then
 			self:debug("Paused due to: In Disabled Area")
 			self:Stop()
 		end
 	else
-		bRemove(self, ZoneChanged, "ZoneChanged")
+		self:bitRemove(ZoneChanged, "ZoneChanged")
 		if self._started and not self._running then
 			self:debug("Resumed due to: Not in Disabled Area")
 			self:Start()
@@ -517,39 +505,20 @@ end
 
 function Core:OnPlayerEnterCombat()
 	if self._disableInCombatFunc("player") then
-		bAdd(self, PlayerCombat, "PlayerCombat")
-		if self._started then
-			self:debug("Paused due to: In Combat")
-			self:Stop()
-		end
+		self:bitAdd(PlayerCombat, "PlayerCombat")
 	end
 end
 
 function Core:OnPlayerLeaveCombat()
-	bRemove(self, PlayerCombat, "PlayerCombat")
-
-	if self._started then
-		self:debug("Resumed due to: No longer In Combat")
-		self:Start()
-	end
+	self:bitRemove(PlayerCombat, "PlayerCombat")
 end
 
 function Core:OnPlayerDead()
-	bAdd(self, PlayerDead, "PlayerDead")
-
-	if self._started then
-		self:debug("Paused due to: Dead")
-		self:Stop()
-	end
+	self:bitAdd(PlayerDead, "PlayerDead")
 end
 
 function Core:OnPlayerUnGhost()
-	bRemove(self, PlayerDead, "PlayerDead")
-
-	if self._started then
-		self:debug("Resumed due to: No longer Dead")
-		self:Start()
-	end
+	self:bitRemove(PlayerDead, "PlayerDead")
 end
 
 function Core:OnSpellcastStart(event, unit)
@@ -557,11 +526,7 @@ function Core:OnSpellcastStart(event, unit)
 		return
 	end
 
-	bAdd(self, PlayerCasting, "PlayerCasting")
-	if self._started then
-		self:debug("Paused due to: Casting Spell")
-		self:Stop()
-	end
+	self:bitAdd(PlayerCasting, "PlayerCasting")
 end
 
 function Core:OnSpellcastStop(event, unit)
@@ -569,27 +534,15 @@ function Core:OnSpellcastStop(event, unit)
 		return
 	end
 
-	bRemove(self, PlayerCasting, "PlayerCasting")
-	if self._started then
-		self:debug("Resumed due to: No longer casting spell")
-		self:Start()
-	end
+	self:bitRemove(PlayerCasting, "PlayerCasting")
 end
 
 function Core:OnStartTalkWithNPC(event)
-	bAdd(self, TalkingWithNPC, "TalkingWithNPC")
-	if self._started then
-		self:debug("Paused due to: Talking With NPC")
-		self:Stop()
-	end
+	self:bitAdd(TalkingWithNPC, "TalkingWithNPC")
 end
 
 function Core:OnStopTalkWithNPC(event)
-	bRemove(self, TalkingWithNPC, "TalkingWithNPC")
-	if self._started then
-		self:debug("Resumed due to: Talking With NPC")
-		self:Start()
-	end
+	self:bitRemove(TalkingWithNPC, "TalkingWithNPC")
 end
 
 function Core:OnConfigChange(...)
@@ -617,25 +570,17 @@ end
 
 function Core:CheckIsFalling()
 	if IsFalling() then -- Is falling
-		if bAnd(PlayerFalling) then -- Already marked as falling
+		if self:bitCheck(PlayerFalling) then -- Already marked as falling
 			return
 		end
 
-		bAdd(self, PlayerFalling, "PlayerFalling")
-		if self._started then
-			self:debug("Paused due to: falling")
-			self:Stop()
-		end
+		self:bitAdd(PlayerFalling, "PlayerFalling")
 		return
 	end
 
 	-- Not falling
-	if bAnd(PlayerFalling) then -- Marked as falling
-		bRemove(self, PlayerFalling, "PlayerFalling")
-		if self._started then
-			self:debug("Resumed due to: Not falling")
-			self:Start()
-		end
+	if self:bitCheck(PlayerFalling) then -- Marked as falling
+		self:bitRemove(PlayerFalling, "PlayerFalling")
 	end
 end
 
