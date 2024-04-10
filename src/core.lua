@@ -100,7 +100,7 @@ local TalkingWithNPC = bit.lshift(Free, 8) --	256
 
 function Core:OnInitialize()
 	Utils.debug.initialize(self, "ATS Core")
-	self:setSeverity("Debug")
+	-- self:setSeverity("Debug")
 
 	self._currentUpdateIndex = 0
 	self._timer = nil
