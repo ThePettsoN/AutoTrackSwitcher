@@ -599,12 +599,21 @@ function Core:CheckIsFalling()
 			return
 		end
 
-		return bAdd(self, PlayerFalling, "PlayerFalling")
+		bAdd(self, PlayerFalling, "PlayerFalling")
+		if self._started then
+			self:debug("Paused due to: falling")
+			self:Stop()
+		end
+		return
 	end
 
 	-- Not falling
 	if bAnd(PlayerFalling) then -- Marked as falling
 		bRemove(self, PlayerFalling, "PlayerFalling")
+		if self._started then
+			self:debug("Resumed due to: Not falling")
+			self:Start()
+		end
 	end
 end
 
