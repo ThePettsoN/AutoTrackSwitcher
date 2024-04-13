@@ -206,12 +206,12 @@ function Core:bitAdd(mask, name, ignoreStopping)
 	end
 end
 
-function Core:bitRemove(mask, name)
+function Core:bitRemove(mask, name, ignoreStarting)
 	self:debug("Removing %s from %s (%s)", tostring(mask), tostring(self._bit), name)
 	self._bit = bit.band(self._bit, bit.bnot(mask))
 	self:debug("(R) New bit %s", tostring(self._bit))
 
-	if self._started then
+	if not ignoreStarting and self._started then
 		self:debug("Resumed due to: %s", name)
 		self:Start()
 	end
@@ -359,24 +359,21 @@ function Core:Stop(isInitial)
 		return
 	end
 
-	if not self._running then
-		return
-	end
-
 	if self._timer then
 		self:CancelTimer(self._timer)
 		self._timer = nil
 	end
 
-	if self._updateTimer then
-		self:CancelTimer(self._updateTimer)
-		self._updateTimer = nil
+	if isInitial then
+		if self._updateTimer then
+			self:CancelTimer(self._updateTimer)
+			self._updateTimer = nil
+		end
+		self:bitRemove(PlayerFalling, "PlayerFalling", true)
 	end
 
-	self:bitRemove(PlayerFalling, "PlayerFalling")
-
-	self._running = false
 	self:SendMessage("OnStop")
+	self._running = false
 
 	if isInitial then
 		Utils.string.printf("AutoTrackSwitcher stopped!")
