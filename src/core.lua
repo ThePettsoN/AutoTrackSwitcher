@@ -128,6 +128,7 @@ function Core:OnEnable()
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnPlayerEnterCombat")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnPlayerLeaveCombat")
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnZoneChanged")
+	self:RegisterEvent("PLAYER_UPDATE_RESTING", "OnZoneChanged")
 	self:RegisterEvent("PLAYER_DEAD", "OnPlayerDead")
 	self:RegisterEvent("PLAYER_UNGHOST", "OnPlayerUnGhost")
 	self:RegisterEvent("UNIT_SPELLCAST_START", "OnSpellcastStart")
@@ -486,19 +487,11 @@ function Core:OnZoneChanged()
 	local _, instanceType = GetInstanceInfo()
 	local currentArea = instanceType == "none" and "world" or instanceType
 
-	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player") and currentArea == "city")
+	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player"))
 	if shouldStop then
 		self:bitAdd(ZoneChanged, "ZoneChanged")
-		if self._started and self._running then
-			self:debug("Paused due to: In Disabled Area")
-			self:Stop()
-		end
 	else
 		self:bitRemove(ZoneChanged, "ZoneChanged")
-		if self._started and not self._running then
-			self:debug("Resumed due to: Not in Disabled Area")
-			self:Start()
-		end
 	end
 end
 
