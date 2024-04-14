@@ -105,6 +105,7 @@ function Core:OnInitialize()
 	self._currentUpdateIndex = 0
 	self._timer = nil
 	self._updateTimer = nil
+	self._numTimesFalling = 0
 
 	self._started = false -- Tracks if addon is started. Does not mean that the timer is nessearily running
 	self._running = false
@@ -327,6 +328,7 @@ function Core:Start(isInitial)
 		self:CancelTimer(self._updateTimer)
 	end
 
+	self._numTimesFalling = 0
 	self._started = true
 	if isInitial then
 		Utils.string.printf("AutoTrackSwitcher started!")
@@ -342,7 +344,7 @@ function Core:Start(isInitial)
 		self._timer = self:ScheduleRepeatingTimer("OnDoLogic", interval)
 	end
 
-	self._updateTimer = self:ScheduleRepeatingTimer("OnUpdate", 1)
+	self._updateTimer = self:ScheduleRepeatingTimer("OnUpdate", 0.5)
 
 	self._running = true
 	self:SendMessage("OnStart", interval)
@@ -571,6 +573,11 @@ function Core:CheckIsFalling()
 			return
 		end
 
+		if self._numTimesFalling < 4 then
+			self._numTimesFalling = self._numTimesFalling + 1
+			return
+		end
+
 		self:bitAdd(PlayerFalling, "PlayerFalling")
 		return
 	end
@@ -578,6 +585,10 @@ function Core:CheckIsFalling()
 	-- Not falling
 	if self:bitCheck(PlayerFalling) then -- Marked as falling
 		self:bitRemove(PlayerFalling, "PlayerFalling")
+	end
+
+	if self._numTimesFalling > 0 then
+		self._numTimesFalling = 0
 	end
 end
 
