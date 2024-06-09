@@ -18,7 +18,7 @@ function UiButton:OnInitialize()
 
 	self:RegisterMessage("OnStart", "OnStart")
 	self:RegisterMessage("OnStop", "OnStop")
-	self:RegisterMessage("OnUpdate", "OnUpdate")
+	self:RegisterMessage("OnDoLogic", "OnDoLogic")
 	self:RegisterMessage("OnTrackingChanged", "OnTrackingChanged")
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 	
@@ -99,7 +99,7 @@ function UiButton:OnStart(eventName, interval)
 	self:UpdateVisibility()
 end
 
-function UiButton:OnUpdate(eventName, interval)
+function UiButton:OnDoLogic(eventName, interval)
 	self.iconButton:SetCooldownDuration(interval)
 end
 
