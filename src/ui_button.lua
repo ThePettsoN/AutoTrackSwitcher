@@ -3,9 +3,10 @@ local TOCNAME, AutoTrackSwitcher = ...
 local AceGUI = LibStub("AceGUI-3.0", "AceEvent-3.0")
 local UiButton = {}
 AutoTrackSwitcher.Core:RegisterModule("UiButton", UiButton, "AceEvent-3.0")
+local MiniMapTracking = MiniMapTrackingFrame or MiniMapTracking
 
 local function GetActualTrackingTexture()
-	if not MiniMapTrackingFrame:IsShown() then
+	if not MiniMapTracking:IsShown() then
 		return 134441
 	end
 
@@ -18,7 +19,7 @@ function UiButton:OnInitialize()
 
 	self:RegisterMessage("OnStart", "OnStart")
 	self:RegisterMessage("OnStop", "OnStop")
-	self:RegisterMessage("OnUpdate", "OnUpdate")
+	self:RegisterMessage("OnDoLogic", "OnDoLogic")
 	self:RegisterMessage("OnTrackingChanged", "OnTrackingChanged")
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 	
@@ -99,7 +100,7 @@ function UiButton:OnStart(eventName, interval)
 	self:UpdateVisibility()
 end
 
-function UiButton:OnUpdate(eventName, interval)
+function UiButton:OnDoLogic(eventName, interval)
 	self.iconButton:SetCooldownDuration(interval)
 end
 

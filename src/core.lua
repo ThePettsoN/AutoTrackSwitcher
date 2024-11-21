@@ -1,7 +1,7 @@
 local _, AutoTrackSwitcher = ...
 local Core = LibStub("AceAddon-3.0"):NewAddon("AutoTrackSwitcherCore", "AceEvent-3.0", "AceTimer-3.0")
 AutoTrackSwitcher.Core = Core
-local Utils = LibStub:GetLibrary("PUtils-1.3")
+local Utils = LibStub:GetLibrary("PUtils-1.5")
 
 AutoTrackSwitcher.Utils = Utils
 AutoTrackSwitcher.Const = {}
@@ -25,10 +25,11 @@ local GetInstanceInfo = GetInstanceInfo
 local IsSpellKnown = IsSpellKnown
 local GetShapeshiftForm = GetShapeshiftForm
 local UnitClass = UnitClass
+local MiniMapTracking = MiniMapTrackingFrame or MiniMapTracking
 
 local function isTracking(trackingData)
 	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
-		if not MiniMapTrackingFrame:IsShown() then
+		if not MiniMapTracking:IsShown() then
 			return false
 		end
 
@@ -67,17 +68,17 @@ local function conditionUnmountedCombatFunc(...)
 		end
 
 		local _, _, classId = UnitClass("player")
-		if classId == Utils.game.Druid then
+		if classId == Utils.game.ClassIds.Druid then
 			local druidShapeshiftFormIds = Utils.game.ShapeshiftIds.Druid
 
 			local shapeshiftFormId = GetShapeshiftForm()
-			if shapeshiftFormId == druidShapeshiftFormIds.AQUATIC_FORM or
-			shapeshiftFormId == druidShapeshiftFormIds.TRAVEL_FORM or
-			(IsSpellKnown(24858) and shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM_BALANCE) or
-			shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM then
+			if shapeshiftFormId == druidShapeshiftFormIds.AquaticForm or
+			shapeshiftFormId == druidShapeshiftFormIds.TravelForm or
+			(IsSpellKnown(24858) and shapeshiftFormId == druidShapeshiftFormIds.FlightFormBalance) or
+			shapeshiftFormId == druidShapeshiftFormIds.FlightForm then
 				return false
 			end
-		elseif classId == Utils.game.Shaman then
+		elseif classId == Utils.game.ClassIds.Shaman then
 			local shapeshiftForm = GetShapeshiftForm()
 			if shapeshiftForm == Utils.game.ShapeshiftIds.Shaman.GhostWolf then -- If shaman and in ghost wolf
 				return false
@@ -89,33 +90,25 @@ local function conditionUnmountedCombatFunc(...)
 end
 
 local Free = 1
-local ItemLocked = bit.lshift(Free, 1)
-local LootOpened = bit.lshift(Free, 2)
-local ZoneChanged = bit.lshift(Free, 3)
-local PlayerCombat = bit.lshift(Free, 4)
-local PlayerDead = bit.lshift(Free, 5)
-local PlayerCasting = bit.lshift(Free, 6)
-
-local _bit = Free
-
-local function bAdd(self, mask, name)
-	self:debug("Adding %s to %s (%s)", tostring(mask), tostring(_bit), name)
-	_bit = bit.bor(_bit, mask)
-	self:debug("(A) New bit %s", tostring(_bit))
-end
-
-local function bRemove(self, mask, name)
-	self:debug("Removing %s from %s (%s)", tostring(mask), tostring(_bit), name)
-	_bit = bit.band(_bit, bit.bnot(mask))
-	self:debug("(R) New bit %s", tostring(_bit))
-end
+local ItemLocked = bit.lshift(Free, 1) --		2
+local LootOpened = bit.lshift(Free, 2) --		4
+local ZoneChanged = bit.lshift(Free, 3) --		8
+local PlayerCombat = bit.lshift(Free, 4) --		16
+local PlayerDead = bit.lshift(Free, 5) --		32
+local PlayerCasting = bit.lshift(Free, 6) --	64
+local PlayerFalling = bit.lshift(Free, 7) --	128
+local TalkingWithNPC = bit.lshift(Free, 8) --	256
 
 function Core:OnInitialize()
-	Utils.debug.initialize(self, "ATS Core")
-	-- self:setSeverity("Debug")
+	Utils.debug.initialize(self, "AutoTrackSwitcher")
+	for name, mod in pairs(self.modules) do
+		Utils.debug.initializeModule(mod, self, name)
+	end
 
 	self._currentUpdateIndex = 0
 	self._timer = nil
+	self._updateTimer = nil
+	self._numTimesFalling = 0
 
 	self._started = false -- Tracks if addon is started. Does not mean that the timer is nessearily running
 	self._running = false
@@ -123,7 +116,7 @@ function Core:OnInitialize()
 	self._trackingData = {}
 	self._trackedSpellIds = {}
 	
-	self._bit = 0
+	self._bit = Free
 end
 
 function Core:OnEnable()
@@ -138,10 +131,15 @@ function Core:OnEnable()
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnPlayerEnterCombat")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnPlayerLeaveCombat")
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "OnZoneChanged")
+	self:RegisterEvent("PLAYER_UPDATE_RESTING", "OnZoneChanged")
 	self:RegisterEvent("PLAYER_DEAD", "OnPlayerDead")
 	self:RegisterEvent("PLAYER_UNGHOST", "OnPlayerUnGhost")
 	self:RegisterEvent("UNIT_SPELLCAST_START", "OnSpellcastStart")
 	self:RegisterEvent("UNIT_SPELLCAST_STOP", "OnSpellcastStop")
+	self:RegisterEvent("GOSSIP_SHOW", "OnStartTalkWithNPC")
+	self:RegisterEvent("GOSSIP_CLOSED", "OnStopTalkWithNPC")
+	self:RegisterEvent("MERCHANT_SHOW", "OnStartTalkWithNPC")
+	self:RegisterEvent("MERCHANT_CLOSED", "OnStopTalkWithNPC")
 
 	self:RegisterMessage("ConfigChange", "OnConfigChange")
 
@@ -152,7 +150,10 @@ end
 function Core:RegisterModule(name, module, ...)
 	local mod = self:NewModule(name, module, ...)
 	AutoTrackSwitcher[name] = mod
-	Utils.debug.initialize(mod, "ATS - " .. name)
+
+	if self.__putils_debug then
+		Utils.debug.initializeModule(mod, self, name)
+	end
 end
 
 function Core:Initialize()
@@ -198,10 +199,35 @@ function Core:SetUpdateConditions()
 	end
 
 	self._disableForAreas = conditions.disable_in_areas
-
-	self._disableWhileFallingFunc = conditions.disable_while_falling and IsFalling or falseFunc
+	self._checkDisableWhileFalling = conditions.disable_while_falling
 end
 
+-- TODO: Move to PUtils
+function Core:bitAdd(mask, name, ignoreStopping)
+	self:debug("Adding %s to %s (%s)", tostring(mask), tostring(self._bit), name)
+	self._bit = bit.bor(self._bit, mask)
+	self:debug("(A) New bit %s", tostring(self._bit))
+
+	if not ignoreStopping and self._started then
+		self:debug("Paused due to: %s", name)
+		self:Stop()
+	end
+end
+
+function Core:bitRemove(mask, name, ignoreStarting)
+	self:debug("Removing %s from %s (%s)", tostring(mask), tostring(self._bit), name)
+	self._bit = bit.band(self._bit, bit.bnot(mask))
+	self:debug("(R) New bit %s", tostring(self._bit))
+
+	if not ignoreStarting and self._started then
+		self:debug("Resumed due to: %s", name)
+		self:Start()
+	end
+end
+
+function Core:bitCheck(mask)
+	return bit.band(self._bit, mask) == mask
+end
 
 
 function Core:UpdateTrackingData()
@@ -292,7 +318,7 @@ end
 function Core:Start(isInitial)
 	self:debug("Starting")
 	if isInitial and self._running then
-		Utils.string.printf("AutoTrackSwitcher already running!")
+		self:printf("AutoTrackSwitcher already running!")
 		return
 	end
 
@@ -305,37 +331,40 @@ function Core:Start(isInitial)
 		self:CancelTimer(self._timer)
 	end
 
-	self._started = true
-	if isInitial then
-		Utils.string.printf("AutoTrackSwitcher started!")
+	if self._updateTimer then -- Failsafe. Should never happen that we can start while a timer is already running, but just in case
+		self:CancelTimer(self._updateTimer)
 	end
 
-	if _bit ~= Free then
+	self._numTimesFalling = 0
+	self._started = true
+	if isInitial then
+		self:printf("AutoTrackSwitcher started!")
+	end
+
+	if self._bit ~= Free then
 		self:debug("Couldn't start. Something is blocking")
 		return
 	end
 
 	local interval = self:GetTimer()
 	if not self._intervalPerTrackingType then
-		self._timer = self:ScheduleRepeatingTimer("OnUpdate", interval)
+		self._timer = self:ScheduleRepeatingTimer("OnDoLogic", interval)
 	end
+
+	self._updateTimer = self:ScheduleRepeatingTimer("OnUpdate", 0.5)
 
 	self._running = true
 	self:SendMessage("OnStart", interval)
 
 	if isInitial then
-		self:OnUpdate()
+		self:OnDoLogic()
 	end
 end
 
 function Core:Stop(isInitial)
 	self:debug("Stopping")
 	if not self._started then
-		Utils.string.printf("AutoTrackSwitcher not started!")
-		return
-	end
-
-	if not self._running then
+		self:printf("AutoTrackSwitcher not started!")
 		return
 	end
 
@@ -344,11 +373,19 @@ function Core:Stop(isInitial)
 		self._timer = nil
 	end
 
-	self._running = false
+	if isInitial then
+		if self._updateTimer then
+			self:CancelTimer(self._updateTimer)
+			self._updateTimer = nil
+		end
+		self:bitRemove(PlayerFalling, "PlayerFalling", true)
+	end
+
 	self:SendMessage("OnStop")
+	self._running = false
 
 	if isInitial then
-		Utils.string.printf("AutoTrackSwitcher stopped!")
+		self:printf("AutoTrackSwitcher stopped!")
 		self._started = false
 	end
 end
@@ -397,26 +434,16 @@ function Core:OnLearnedSpellInTab()
 end
 
 function Core:OnItemLocked(eventName, bagIndex, slotIndex)
-	bAdd(self, ItemLocked, "ItemLocked")
+	self:bitAdd(ItemLocked, "ItemLocked")
 	self._bagIndex = bagIndex
 	self._slotIndex = slotIndex
-
-	if self._started then
-		self:debug("Paused due to: Item locked")
-		self:Stop()
-	end
 end
 
 function Core:OnItemUnlocked(eventName, bagIndex, slotIndex)
-	bRemove(self, ItemLocked, "ItemLocked")
+	self:bitRemove(ItemLocked, "ItemLocked")
 
 	self._bagIndex = nil
 	self._slotIndex = nil
-
-	if self._started then
-		self:debug("Resumed due to: Item unlocked")
-		self:Start()
-	end
 end
 
 function Core:OnBagUpdate(eventName, bagIndex)
@@ -432,19 +459,14 @@ function Core:OnBagUpdate(eventName, bagIndex)
 		return
 	end
 
-	bRemove(self, ItemLocked, "ItemLocked")
+	self:bitRemove(ItemLocked, "ItemLocked")
 
 	self._bagIndex = nil
 	self._slotIndex = nil
-
-	if self._started then
-		self:debug("Resumed due to: Item unlocked (bag update)")
-		self:Start()
-	end
 end
 
 function Core:OnLootOpened(autoLoot)
-	bAdd(self, LootOpened, "LootOpened")
+	self:bitAdd(LootOpened, "LootOpened", true)
 
 	if not autoLoot then
 		if self._started then
@@ -464,69 +486,37 @@ function Core:OnLootOpened(autoLoot)
 end
 
 function Core:OnLootClosed()
-	bRemove(self, LootOpened, "LootOpened")
-
-	if self._started then
-		self:debug("Resumed due to: Loot Window closed")
-		self:Start()
-	end
+	self:bitRemove(LootOpened, "LootOpened")
 end
 
 function Core:OnZoneChanged()
 	local _, instanceType = GetInstanceInfo()
 	local currentArea = instanceType == "none" and "world" or instanceType
 
-	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player") and currentArea == "city")
+	local shouldStop = self._disableForAreas[currentArea] or (self._disableForAreas.city and IsResting("player"))
 	if shouldStop then
-		bAdd(self, ZoneChanged, "ZoneChanged")
-		if self._started and self._running then
-			self:debug("Paused due to: In Disabled Area")
-			self:Stop()
-		end
+		self:bitAdd(ZoneChanged, "ZoneChanged")
 	else
-		bRemove(self, ZoneChanged, "ZoneChanged")
-		if self._started and not self._running then
-			self:debug("Resumed due to: Not in Disabled Area")
-			self:Start()
-		end
+		self:bitRemove(ZoneChanged, "ZoneChanged")
 	end
 end
 
 function Core:OnPlayerEnterCombat()
 	if self._disableInCombatFunc("player") then
-		bAdd(self, PlayerCombat, "PlayerCombat")
-		if self._started then
-			self:debug("Paused due to: In Combat")
-			self:Stop()
-		end
+		self:bitAdd(PlayerCombat, "PlayerCombat")
 	end
 end
 
 function Core:OnPlayerLeaveCombat()
-	bRemove(self, PlayerCombat, "PlayerCombat")
-
-	if self._started then
-		self:debug("Resumed due to: No longer In Combat")
-		self:Start()
-	end
+	self:bitRemove(PlayerCombat, "PlayerCombat")
 end
 
 function Core:OnPlayerDead()
-	bAdd(self, PlayerDead, "PlayerDead")
-
-	if self._started then
-		self:debug("Paused due to: Dead")
-		self:Stop()
-	end
+	self:bitAdd(PlayerDead, "PlayerDead")
 end
 
 function Core:OnPlayerUnGhost()
-	bRemove(self, PlayerDead, "PlayerDead")
-
-	if self._started then
-		self:debug("Resumed due to: No longer Dead")
-		self:Start()
-	end
+	self:bitRemove(PlayerDead, "PlayerDead")
 end
 
 function Core:OnSpellcastStart(event, unit)
@@ -534,11 +524,7 @@ function Core:OnSpellcastStart(event, unit)
 		return
 	end
 
-	bAdd(self, PlayerCasting, "PlayerCasting")
-	if self._started then
-		self:debug("Paused due to: Casting Spell")
-		self:Stop()
-	end
+	self:bitAdd(PlayerCasting, "PlayerCasting")
 end
 
 function Core:OnSpellcastStop(event, unit)
@@ -546,13 +532,16 @@ function Core:OnSpellcastStop(event, unit)
 		return
 	end
 
-	bRemove(self, PlayerCasting, "PlayerCasting")
-	if self._started then
-		self:debug("Resumed due to: No longer casting spell")
-		self:Start()
-	end
+	self:bitRemove(PlayerCasting, "PlayerCasting")
 end
 
+function Core:OnStartTalkWithNPC(event)
+	self:bitAdd(TalkingWithNPC, "TalkingWithNPC")
+end
+
+function Core:OnStopTalkWithNPC(event)
+	self:bitRemove(TalkingWithNPC, "TalkingWithNPC")
+end
 
 function Core:OnConfigChange(...)
 	self:SetActiveTracking()
@@ -577,25 +566,51 @@ function Core:OnConfigChange(...)
 	end
 end
 
+function Core:CheckIsFalling()
+	if IsFalling() then -- Is falling
+		if self:bitCheck(PlayerFalling) then -- Already marked as falling
+			return
+		end
+
+		if self._numTimesFalling < 4 then
+			self._numTimesFalling = self._numTimesFalling + 1
+			return
+		end
+
+		self:bitAdd(PlayerFalling, "PlayerFalling")
+		return
+	end
+
+	-- Not falling
+	if self:bitCheck(PlayerFalling) then -- Marked as falling
+		self:bitRemove(PlayerFalling, "PlayerFalling")
+	end
+
+	if self._numTimesFalling > 0 then
+		self._numTimesFalling = 0
+	end
+end
+
 function Core:OnUpdate()
+	if self._checkDisableWhileFalling then
+		self:CheckIsFalling()
+	end
+end
+
+function Core:OnDoLogic()
 	local interval = self:GetTimer()
-	self:SendMessage("OnUpdate", interval)
+	self:SendMessage("OnDoLogic", interval)
 
 	self._currentUpdateIndex = (self._currentUpdateIndex % #self._trackedSpellIds) + 1
 	local spellId = self._trackedSpellIds[self._currentUpdateIndex]
 	local trackingData = self._trackingData[spellId]
 
 	if self._intervalPerTrackingType then
-		self._timer = self:ScheduleTimer("OnUpdate", interval)
+		self._timer = self:ScheduleTimer("OnDoLogic", interval)
 	end
 
 	if isTracking(trackingData) then
 		self:debug("Already tracking")
-		return
-	end
-
-	if self._disableWhileFallingFunc("player") then
-		self:debug("Disable due to: Falling")
 		return
 	end
 
