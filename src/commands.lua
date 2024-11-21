@@ -1,6 +1,6 @@
 local _, AutoTrackSwitcher = ...
 
-local Utils = LibStub:GetLibrary("PUtils-1.4")
+local Utils = LibStub:GetLibrary("PUtils-1.5")
 
 local stringformat = string.format
 local wipe = wipe
@@ -221,7 +221,7 @@ function Commands:_help(nextPosition, args)
 				end
 			end
 		end
-		Utils.string.printf("\"%s%s\" - %s", help.syntax, argString, help.desc)
+		self:printf("\"%s%s\" - %s", help.syntax, argString, help.desc)
 	end
 end
 

@@ -1,7 +1,7 @@
 local _, AutoTrackSwitcher = ...
 local Core = LibStub("AceAddon-3.0"):NewAddon("AutoTrackSwitcherCore", "AceEvent-3.0", "AceTimer-3.0")
 AutoTrackSwitcher.Core = Core
-local Utils = LibStub:GetLibrary("PUtils-1.4")
+local Utils = LibStub:GetLibrary("PUtils-1.5")
 
 AutoTrackSwitcher.Utils = Utils
 AutoTrackSwitcher.Const = {}
@@ -99,8 +99,10 @@ local PlayerFalling = bit.lshift(Free, 7) --	128
 local TalkingWithNPC = bit.lshift(Free, 8) --	256
 
 function Core:OnInitialize()
-	Utils.debug.initialize(self, "ATS Core")
-	-- self:setSeverity("Debug")
+	Utils.debug.initialize(self, "AutoTrackSwitcher")
+	for name, mod in pairs(self.modules) do
+		Utils.debug.initializeModule(mod, self, name)
+	end
 
 	self._currentUpdateIndex = 0
 	self._timer = nil
@@ -147,7 +149,10 @@ end
 function Core:RegisterModule(name, module, ...)
 	local mod = self:NewModule(name, module, ...)
 	AutoTrackSwitcher[name] = mod
-	Utils.debug.initialize(mod, "ATS - " .. name)
+
+	if self.__putils_debug then
+		Utils.debug.initializeModule(mod, self, name)
+	end
 end
 
 function Core:Initialize()
@@ -312,7 +317,7 @@ end
 function Core:Start(isInitial)
 	self:debug("Starting")
 	if isInitial and self._running then
-		Utils.string.printf("AutoTrackSwitcher already running!")
+		self:printf("AutoTrackSwitcher already running!")
 		return
 	end
 
@@ -332,7 +337,7 @@ function Core:Start(isInitial)
 	self._numTimesFalling = 0
 	self._started = true
 	if isInitial then
-		Utils.string.printf("AutoTrackSwitcher started!")
+		self:printf("AutoTrackSwitcher started!")
 	end
 
 	if self._bit ~= Free then
@@ -358,7 +363,7 @@ end
 function Core:Stop(isInitial)
 	self:debug("Stopping")
 	if not self._started then
-		Utils.string.printf("AutoTrackSwitcher not started!")
+		self:printf("AutoTrackSwitcher not started!")
 		return
 	end
 
@@ -379,7 +384,7 @@ function Core:Stop(isInitial)
 	self._running = false
 
 	if isInitial then
-		Utils.string.printf("AutoTrackSwitcher stopped!")
+		self:printf("AutoTrackSwitcher stopped!")
 		self._started = false
 	end
 end
