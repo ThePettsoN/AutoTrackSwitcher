@@ -25,10 +25,11 @@ local GetInstanceInfo = GetInstanceInfo
 local IsSpellKnown = IsSpellKnown
 local GetShapeshiftForm = GetShapeshiftForm
 local UnitClass = UnitClass
+local MiniMapTracking = MiniMapTrackingFrame or MiniMapTracking
 
 local function isTracking(trackingData)
 	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
-		if not MiniMapTrackingFrame:IsShown() then
+		if not MiniMapTracking:IsShown() then
 			return false
 		end
 

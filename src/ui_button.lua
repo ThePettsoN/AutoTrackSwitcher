@@ -3,9 +3,10 @@ local TOCNAME, AutoTrackSwitcher = ...
 local AceGUI = LibStub("AceGUI-3.0", "AceEvent-3.0")
 local UiButton = {}
 AutoTrackSwitcher.Core:RegisterModule("UiButton", UiButton, "AceEvent-3.0")
+local MiniMapTracking = MiniMapTrackingFrame or MiniMapTracking
 
 local function GetActualTrackingTexture()
-	if not MiniMapTrackingFrame:IsShown() then
+	if not MiniMapTracking:IsShown() then
 		return 134441
 	end
 
