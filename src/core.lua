@@ -1,9 +1,12 @@
-local _, AutoTrackSwitcher = ...
+local TOCNAME, AutoTrackSwitcher = ...
 local Core = LibStub("AceAddon-3.0"):NewAddon("AutoTrackSwitcherCore", "AceEvent-3.0", "AceTimer-3.0")
 AutoTrackSwitcher.Core = Core
-local Utils = LibStub:GetLibrary("PUtils-1.5")
+local PUtils = LibStub:GetLibrary("PUtils-2.0")
+local DebugUtils = PUtils.Debug
+local GameUtils = PUtils.Game
+local TableUtils = PUtils.Table
+AutoTrackSwitcher.PUtils = PUtils
 
-AutoTrackSwitcher.Utils = Utils
 AutoTrackSwitcher.Const = {}
  
 -- Lua API
@@ -28,7 +31,7 @@ local UnitClass = UnitClass
 local MiniMapTracking = MiniMapTrackingFrame or MiniMapTracking
 
 local function isTracking(trackingData)
-	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
+	if GameUtils.IsClassic() then
 		if not MiniMapTracking:IsShown() then
 			return false
 		end
@@ -46,7 +49,7 @@ local function isTracking(trackingData)
 end
 
 local function TrackSpell(trackingData)
-	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
+	if GameUtils.IsClassic() then
 		CastSpellByName(trackingData.name)
 	else
 		SetTracking(trackingData.index, true)
@@ -68,19 +71,19 @@ local function conditionUnmountedCombatFunc(...)
 		end
 
 		local _, _, classId = UnitClass("player")
-		if classId == Utils.game.ClassIds.Druid then
-			local druidShapeshiftFormIds = Utils.game.ShapeshiftIds.Druid
+		if GameUtils.ComparePlayerClass("DRUID") then
+			local druidShapeshiftFormIds = GameUtils.ShapeshiftIdLookup.DRUID
 
 			local shapeshiftFormId = GetShapeshiftForm()
-			if shapeshiftFormId == druidShapeshiftFormIds.AquaticForm or
-			shapeshiftFormId == druidShapeshiftFormIds.TravelForm or
-			(IsSpellKnown(24858) and shapeshiftFormId == druidShapeshiftFormIds.FlightFormBalance) or
-			shapeshiftFormId == druidShapeshiftFormIds.FlightForm then
+			if shapeshiftFormId == druidShapeshiftFormIds.AQUATIC_FORM or
+					shapeshiftFormId == druidShapeshiftFormIds.TRAVEL_FORM or
+					(IsSpellKnown(24858) and shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM_BALANCE) or
+					shapeshiftFormId == druidShapeshiftFormIds.FLIGHT_FORM then
 				return false
 			end
-		elseif classId == Utils.game.ClassIds.Shaman then
+		elseif GameUtils.ComparePlayerClass("SHAMAN") then
 			local shapeshiftForm = GetShapeshiftForm()
-			if shapeshiftForm == Utils.game.ShapeshiftIds.Shaman.GhostWolf then -- If shaman and in ghost wolf
+			if shapeshiftForm == GameUtils.ShapeshiftIdLookup.SHAMAN.GHOST_WOLF then -- If shaman and in ghost wolf
 				return false
 			end
 		end
@@ -100,10 +103,11 @@ local PlayerFalling = bit.lshift(Free, 7) --	128
 local TalkingWithNPC = bit.lshift(Free, 8) --	256
 
 function Core:OnInitialize()
-	Utils.debug.initialize(self, "AutoTrackSwitcher")
+	DebugUtils.initialize(self, TOCNAME)
 	for name, mod in pairs(self.modules) do
-		Utils.debug.initializeModule(mod, self, name)
+		DebugUtils.initializeModule(mod, self, name)
 	end
+	-- self:setSeverity(DebugUtils.Severities.Debug)
 
 	self._currentUpdateIndex = 0
 	self._timer = nil
@@ -152,7 +156,7 @@ function Core:RegisterModule(name, module, ...)
 	AutoTrackSwitcher[name] = mod
 
 	if self.__putils_debug then
-		Utils.debug.initializeModule(mod, self, name)
+		DebugUtils.initializeModule(mod, self, name)
 	end
 end
 
@@ -233,7 +237,7 @@ end
 function Core:UpdateTrackingData()
 	wipe(self._trackingData)
 
-	if Utils.game.compareGameVersion(Utils.game.GameVersionLookup.SeasonOfDiscovery) then
+	if GameUtils.IsClassic() then
 		local spells = {
 			2580, -- Find Minerals
 			2383, -- Find Herbs
@@ -404,7 +408,7 @@ function Core:SetInterval(tracking, skipRestart)
 	self._updateInterval = interval
 	self._intervalPerTrackingType = tracking.enable_interval_per_tracking_type
 
-	self._individualTrackingTimers = Utils.table.clone(tracking.individual, self._individualTrackingTimers or {})
+	self._individualTrackingTimers = TableUtils.clone(tracking.individual, self._individualTrackingTimers or {})
 	for k, v in pairs(self._individualTrackingTimers) do
 		self._individualTrackingTimers[k] = math.min(math.max(v, 2.01), 60)
 	end

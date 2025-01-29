@@ -1,6 +1,6 @@
 local _, AutoTrackSwitcher = ...
 
-local Utils = LibStub:GetLibrary("PUtils-1.5")
+local PUtils = AutoTrackSwitcher.PUtils
 
 local stringformat = string.format
 local wipe = wipe
