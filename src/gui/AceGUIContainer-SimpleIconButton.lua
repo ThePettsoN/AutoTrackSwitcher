@@ -1,5 +1,8 @@
+local _, AutoTrackSwitcher = ...
+
 local AceGUI = LibStub("AceGUI-3.0")
-local Utils = LibStub:GetLibrary("PUtils-1.5")
+local PUtils = LibStub:GetLibrary("PUtils-2.0")
+local TableUtils = PUtils.Table
 
 -- Lua APIs
 local pairs = pairs
@@ -257,7 +260,7 @@ end
 -- Constructor --
 local function Constructor()
 	local self = {}
-	Utils.table.mergeRecursive(self, AceContainerSimpleIconButton)
+	TableUtils.mergeRecursive(self, AceContainerSimpleIconButton)
 
 	local width, height = 64, 64
 
